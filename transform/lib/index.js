@@ -1,55 +1,92 @@
-import { BlockStatement } from "assemblyscript/dist/assemblyscript.js";
 import { Transform } from "assemblyscript/dist/transform.js";
-import { TrueExpression, IdentifierExpression, BinaryExpression, Range } from "assemblyscript/dist/assemblyscript.js";
-import { toString } from "visitor-as/dist/utils.js";
+import { Parser, Node, Tokenizer, Source } from "assemblyscript/dist/assemblyscript.js";
+import { BaseVisitor } from "visitor-as/dist/index.js";
+class TryCatchVisitor extends BaseVisitor {
+    constructor() {
+        super(...arguments);
+        this.stopNextVisit = false;
+    }
+    visitFunctionDeclaration(node) {
+        if (node.name.text === "__try_abort")
+            this.stopNextVisit = true;
+    }
+    visitCallExpression(node) {
+        if (this.stopNextVisit) {
+            this.stopNextVisit = false;
+            return;
+        }
+        if (node.expression.text != "abort")
+            return;
+        node.expression = Node.createIdentifierExpression("__try_abort", node.range, false);
+    }
+    visitSource(node) {
+        super.visitSource(node);
+    }
+}
 export default class TryCatchTransform extends Transform {
     afterParse(parser) {
+        const visitor = new TryCatchVisitor();
         for (const source of parser.sources) {
+            let hasTryStmt = false;
             if (source.isLibrary)
                 continue;
             for (let i = 0; i < source.statements.length; i++) {
                 const stmt = source.statements[i];
                 if (stmt.kind === 46 /* NodeKind.Try */) {
+                    hasTryStmt = true;
                     const tryStmt = stmt;
-                    console.log(toString(tryStmt));
                     const tryStmts = tryStmt.bodyStatements;
                     const catchStmts = tryStmt.catchStatements;
                     const finallyStmts = tryStmt.finallyStatements;
-                    //const catchVar = tryStmt.catchVariable;
-                    console.dir(tryStmts[0], { depth: 3 });
-                    const t = new BinaryExpression(101 /* Token.Equals */, new IdentifierExpression("__TRY_CATCH_ERRORS", false, new Range(113, 131)), new TrueExpression(new Range(134, 138)), new Range(113, 138));
-                    console.dir(t, { depth: 3 });
-                    tryStmts.unshift(t); /*
-                    tryStmts.push(new BinaryExpression(
-                        Token.Equals,
-                        new IdentifierExpression(
-                            "__TRY_CATCH_ERRORS",
-                            false,
-                            new Range(0, 0)
-                        ),
-                        new FalseExpression(new Range(0, 0)),
-                        new Range(113, 138)
-                    ));*/
-                    const tryBlock = new BlockStatement(tryStmts, new Range(0, 0));
-                    const catchBlock = catchStmts ? new BlockStatement(catchStmts, new Range(0, 0)) : null;
-                    const finallyBlock = finallyStmts ? new BlockStatement(finallyStmts, new Range(0, 0)) : null;
+                    const catchVar = tryStmt.catchVariable;
+                    if (catchStmts) {
+                        const catch_on = parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_CATCH_ERRORS = true")));
+                        tryStmts.unshift(catch_on);
+                        const catch_off = parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_CATCH_ERRORS = false")));
+                        tryStmts.push(catch_off);
+                    }
+                    const tryBlock = Node.createBlockStatement(tryStmts, source.range);
+                    if (catchVar) {
+                        catchStmts === null || catchStmts === void 0 ? void 0 : catchStmts.unshift(Node.createVariableStatement(null, [
+                            Node.createVariableDeclaration(catchVar, null, 16 /* CommonFlags.Let */, null, Node.createIdentifierExpression("__TRY_ERROR", source.range, false), source.range)
+                        ], source.range));
+                        /*catchStmts?.push(
+                            Node.createBinaryExpression(
+                                Token.Equals,
+                                Node.createIdentifierExpression(
+                                    "__TRY_ERROR",
+                                    source.range,
+                                    false
+                                ),
+                                Node.createFalseExpression(
+                                    source.range
+                                ),
+                                source.range
+                            )
+                        )*/
+                    }
+                    const catchBlock = catchStmts ? Node.createIfStatement(Node.createIdentifierExpression("__TRY_FAIL", source.range, false), Node.createBlockStatement(catchStmts, source.range), null, source.range) : null;
+                    const finallyBlock = finallyStmts ? Node.createBlockStatement(finallyStmts, source.range) : null;
                     let placement = i;
                     source.statements.splice(i, 1, tryBlock);
-                    console.log(`Catch Block: ${toString(catchBlock)}`);
                     if (catchBlock)
                         source.statements.splice(++placement, 0, catchBlock);
                     if (finallyBlock)
                         source.statements.splice(++placement, 0, finallyBlock);
-                    console.log("Final file:");
-                    for (const stmt of source.statements) {
-                        console.log(toString(stmt));
-                    }
                 }
-                else if (stmt.kind === 9 /* NodeKind.Call */) {
-                    console.log(toString(stmt));
-                }
+                visitor.visitSource(source);
             }
-            console.log(source.simplePath);
+            if (hasTryStmt) {
+                hasTryStmt = false;
+                const tokenizer = new Tokenizer(new Source(0 /* SourceKind.User */, source.normalizedPath, `@inline function __try_abort(message: string, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
+                            if (!__TRY_CATCH_ERRORS) abort(message, fileName, lineNumber, columnNumber);
+                            __TRY_ERROR = message;
+                            __TRY_FAIL = true;
+                        }`));
+                const parser = new Parser();
+                parser.currentSource = source;
+                source.statements.unshift(parser.parseTopLevelStatement(tokenizer));
+            }
         }
     }
 }
