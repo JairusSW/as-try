@@ -40,6 +40,18 @@ class TryCatchVisitor extends BaseVisitor {
 }
 export default class TryCatchTransform extends Transform {
     afterParse(parser: Parser): void | Promise<void> {
+
+        parser.parseFile(`@global let __TRY_CATCH_ERRORS: boolean = false;
+        @global let __TRY_FAIL: boolean = false;
+        @global let __TRY_ERROR: string = "";`,
+            "as-try/globals.ts",
+            true
+        );
+
+        const srcStart = parser.sources[0];
+        parser.sources.splice(0, 1, parser.sources[parser.sources.length - 1]!);
+        parser.sources.splice(parser.sources.length - 1, 1, srcStart!);
+
         const visitor = new TryCatchVisitor();
         for (const source of parser.sources) {
             let hasTryStmt = false;
