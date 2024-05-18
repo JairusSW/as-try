@@ -1,33 +1,17 @@
 let __TRY_CATCH_ERRORS: boolean = false;
 let __TRY_FAIL: boolean = false;
-let __TRY_ERROR: u64 = 0;
-
+let __TRY_ERROR: string = ""
 try {
+    __TRY_CATCH_ERRORS = true;
     console.log("try");
-    __TRY_FAIL = true;
 } catch (e) {
-    console.log("hello");
-    console.log("error");
+        console.log("catch");
 } finally {
     console.log("finally");
 }
 
-/*
-@global let __TRY_CATCH_ERRORS: boolean = false;
-@global let __TRY_FAIL: boolean = false;
-@global let __TRY_ERROR: u64 = 0;
-
-{
-    __TRY_CATCH_ERRORS = true;
-    console.log("try");
-    __TRY_CATCH_ERRORS = false;
+function __try_abort(message: string): void {
+    if (!__TRY_CATCH_ERRORS) abort(message);
+    __TRY_ERROR = message;
+    __TRY_FAIL = true;
 }
-if (__TRY_FAIL) {
-    const e = changetype<string>(__TRY_ERROR);
-    console.log("error");
-    console.log(e);
-}
-{
-    console.log("finally");
-}
-*/

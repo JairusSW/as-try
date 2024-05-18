@@ -1,10 +1,11 @@
-import {Tokenizer, Source, BlockStatement } from "assemblyscript/dist/assemblyscript";
-import { Transform} from "assemblyscript/dist/transform.js";
-import { IdentifierExpression, IfStatement, NodeKind, TryStatement } from "assemblyscript/dist/assemblyscript.js";
+import { BlockStatement } from "assemblyscript/dist/assemblyscript.js";
+import { Transform } from "assemblyscript/dist/transform.js";
+import { TrueExpression, FalseExpression, IdentifierExpression, IfStatement, Token, BinaryExpression, NodeKind, TryStatement, Range } from "assemblyscript/dist/assemblyscript.js";
+import { RangeTransform } from "visitor-as/dist/transformRange.js"
 import { Parser } from "assemblyscript/dist/assemblyscript.js";
 import { toString } from "visitor-as/dist/utils.js";
 import { SimpleParser } from "visitor-as/dist/index.js";
-import { SourceKind } from "types:assemblyscript/src/ast";
+import { CallExpression, Expression } from "types:assemblyscript/src/ast";
 export default class TryCatchTransform extends Transform {
     afterParse(parser: Parser): void | Promise<void> {
         for (const source of parser.sources) {
@@ -18,22 +19,34 @@ export default class TryCatchTransform extends Transform {
                     const tryStmts = tryStmt.bodyStatements;
                     const catchStmts = tryStmt.catchStatements;
                     const finallyStmts = tryStmt.finallyStatements;
-
                     //const catchVar = tryStmt.catchVariable;
-
-                    const tryBlock = SimpleParser.parseStatement(`{${tryStmts.map(v => toString(v) + "\n")}}`) as BlockStatement;
-                    
-                    const catchBlock = catchStmts ? new IfStatement(
+                    console.dir(tryStmts[0], { depth: 3 });
+                    const t = new BinaryExpression(
+                        Token.Equals,
                         new IdentifierExpression(
-                            "__TRY_FAIL",
+                            "__TRY_CATCH_ERRORS",
                             false,
-                            stmt.range
+                            new Range(113, 131)
                         ),
-                        SimpleParser.parseStatement(`{let e = "hello";${catchStmts.map(v => toString(v) + ";")}}`) as BlockStatement,
-                        null,
-                        stmt.range
-                    ) : null;
-                    const finallyBlock = finallyStmts ? SimpleParser.parseStatement(`{${finallyStmts.map(v => toString(v) + "\n")}}`) as BlockStatement : null;
+                        new TrueExpression(new Range(134, 138)),
+                        new Range(113, 138)
+                    );
+                    console.dir(t, { depth: 3 });
+                    tryStmts.unshift(t);/*
+                    tryStmts.push(new BinaryExpression(
+                        Token.Equals,
+                        new IdentifierExpression(
+                            "__TRY_CATCH_ERRORS",
+                            false,
+                            new Range(0, 0)
+                        ),
+                        new FalseExpression(new Range(0, 0)),
+                        new Range(113, 138)
+                    ));*/
+                    const tryBlock = new BlockStatement(tryStmts, new Range(0, 0));
+
+                    const catchBlock = catchStmts ? new BlockStatement(catchStmts, new Range(0, 0)) : null;
+                    const finallyBlock = finallyStmts ? new BlockStatement(finallyStmts, new Range(0, 0)) as BlockStatement : null;
 
                     let placement = i;
                     source.statements.splice(i, 1, tryBlock);
@@ -44,6 +57,8 @@ export default class TryCatchTransform extends Transform {
                     for (const stmt of source.statements) {
                         console.log(toString(stmt));
                     }
+                } else if (stmt.kind === NodeKind.Call) {
+                    console.log(toString(stmt))
                 }
             }
 
