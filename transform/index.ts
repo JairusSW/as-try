@@ -118,21 +118,18 @@ export default class TryCatchTransform extends Transform {
                                 ],
                                 source.range
                             )
-                        )
-                        /*catchStmts?.push(
-                            Node.createBinaryExpression(
-                                Token.Equals,
-                                Node.createIdentifierExpression(
-                                    "__TRY_ERROR",
-                                    source.range,
-                                    false
-                                ),
-                                Node.createFalseExpression(
-                                    source.range
-                                ),
-                                source.range
-                            )
-                        )*/
+                        );
+                        catchStmts?.unshift(
+                            parser.parseStatement(
+                                new Tokenizer(
+                                    new Source(
+                                        SourceKind.User,
+                                        "__try_catch_transforms.ts",
+                                        "__TRY_FAIL = false"
+                                    )
+                                )
+                            )!
+                        );
                     }
                     const catchBlock = catchStmts ? Node.createIfStatement(
                         Node.createIdentifierExpression(

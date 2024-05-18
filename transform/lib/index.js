@@ -56,20 +56,7 @@ export default class TryCatchTransform extends Transform {
                         catchStmts === null || catchStmts === void 0 ? void 0 : catchStmts.unshift(Node.createVariableStatement(null, [
                             Node.createVariableDeclaration(catchVar, null, 16 /* CommonFlags.Let */, null, Node.createIdentifierExpression("__TRY_ERROR", source.range, false), source.range)
                         ], source.range));
-                        /*catchStmts?.push(
-                            Node.createBinaryExpression(
-                                Token.Equals,
-                                Node.createIdentifierExpression(
-                                    "__TRY_ERROR",
-                                    source.range,
-                                    false
-                                ),
-                                Node.createFalseExpression(
-                                    source.range
-                                ),
-                                source.range
-                            )
-                        )*/
+                        catchStmts === null || catchStmts === void 0 ? void 0 : catchStmts.unshift(parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_FAIL = false"))));
                     }
                     const catchBlock = catchStmts ? Node.createIfStatement(Node.createIdentifierExpression("__TRY_FAIL", source.range, false), Node.createBlockStatement(catchStmts, source.range), null, source.range) : null;
                     const finallyBlock = finallyStmts ? Node.createBlockStatement(finallyStmts, source.range) : null;
