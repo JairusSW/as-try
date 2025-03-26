@@ -1,16 +1,8 @@
 {
-    "targets": {
-      "test": {
-        "outFile": "build/test.wasm",
-        "sourceMap": false,
-        "optimizeLevel": 0,
-        "shrinkLevel": 0,
-        "converge": false,
-        "noAssert": false
-      }
-    },
-    "options": {
-      "transform": ["./transform"]
-    }
-  }
-  
+  "targets": {},
+  "options": {
+    "transform": [],
+    "disableWarning": []
+  },
+  "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"
+}

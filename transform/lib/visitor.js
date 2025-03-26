@@ -5,7 +5,7 @@ export class Visitor {
             return;
         if (node instanceof Array) {
             for (const n of node) {
-                this._visit(n, ref);
+                this._visit(n, node);
             }
         }
         else {
@@ -15,7 +15,7 @@ export class Visitor {
     _visit(node, ref) {
         switch (node.kind) {
             case 0:
-                this.visitSource(node, ref);
+                this.visitSource(node, node);
                 break;
             case 1:
                 this.visitNamedTypeNode(node, ref);

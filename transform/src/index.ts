@@ -6,22 +6,32 @@ import {
   TryStatement,
   IdentifierExpression,
   NodeKind,
-  Range
+  Range,
+  Token,
+  Statement,
+  BlockStatement,
+  CommonFlags
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./visitor.js";
-import { toString } from "./util.js";
+import { SimpleParser, toString } from "./util.js";
 import { CallExpression, FunctionDeclaration, ThrowStatement } from "types:assemblyscript/src/ast";
 import { Exception, ExceptionType } from "./types.js";
+import { RangeTransform } from "./range.js";
 
 class TryTransform extends Visitor {
+  public searching: boolean = false;
   public foundExceptions: Node[] = [];
-  visitTryStatement(node: TryStatement, ref?: Node | null): void {
+  public fns: Map<string,FunctionDeclaration | null> = new Map<string, FunctionDeclaration | null>();
+  public baseStatements: Node[] = [];
+  visitTryStatement(node: TryStatement, ref?: Node | Node[] | null): void {
+    this.baseStatements = node.bodyStatements;
     console.log("Found try: " + toString(node));
     this.foundExceptions = [];
 
     let exceptions: Exception[] = [];
 
-    for (const stmt of node.bodyStatements) {
+    this.searching = true;
+    for (const stmt of this.baseStatements) {
       this.visit(stmt);
       if (!this.foundExceptions.length) continue;
 
@@ -36,87 +46,164 @@ class TryTransform extends Visitor {
 
         console.log("Found child exception: " + toString(childException));
       }
-      
+
       exceptions.push(ex);
       this.foundExceptions = [];
     }
+    this.searching = false;
 
     if (!exceptions.length) return;
 
     const tryBlock = Node.createBlockStatement([], new Range(
-      node.bodyStatements[0].range.start,
-      node.bodyStatements[node.bodyStatements.length - 1].range.end
+      this.baseStatements[0].range.start,
+      this.baseStatements[this.baseStatements.length - 1].range.end
     ));
 
-    for (const stmt of node.bodyStatements) {
+    let catchBlock = Node.createBlockStatement(node.catchStatements, new Range(
+      node.catchStatements[0].range.start,
+      node.catchStatements[node.catchStatements.length - 1].range.end
+    ));
+
+    const finallyBlock = node.finallyStatements.length ? Node.createBlockStatement(node.finallyStatements, new Range(
+      node.finallyStatements[0].range.start,
+      node.finallyStatements[node.finallyStatements.length - 1].range.end
+    )) : null;
+
+    this.addTryBlock(exceptions, this.baseStatements, tryBlock);
+
+    const catchVar = Node.createVariableStatement(
+      null,
+      [
+        Node.createVariableDeclaration(
+          node.catchVariable,
+          null,
+          CommonFlags.Let,
+          null,
+          Node.createNewExpression(
+            Node.createSimpleTypeName("Exception", node.range),
+            null,
+            [
+              Node.createPropertyAccessExpression(
+                Node.createIdentifierExpression(
+                  "ExceptionState",
+                  node.range
+                ),
+                Node.createIdentifierExpression(
+                  "Type",
+                  node.range
+                ),
+                node.range
+              )
+            ],
+            node.range
+          ),
+          node.range
+        )
+      ],
+      node.range
+    );
+
+    catchBlock.statements.unshift(catchVar)
+    this.foundExceptions = [];
+    console.log(toString(tryBlock));
+    console.log(toString(catchBlock));
+    console.log(toString(finallyBlock));
+    const baseIndex = (ref as Node[]).indexOf(node);
+    (ref as Node[]).splice(baseIndex, 1, tryBlock, catchBlock, finallyBlock);
+
+    const replacer = new RangeTransform(node);
+    replacer.visit(tryBlock);
+  }
+  visitCallExpression(node: CallExpression, ref?: Node | null): void {
+    const fnName = node.expression as IdentifierExpression;
+    if (fnName.text == "abort") {
+      this.foundExceptions.push(node);
+    } else if (this.searching) {
+      if (!this.fns.has(fnName.text)) {
+        console.log("Could not find function " + fnName.text);
+        return;
+      }
+      const fnRef = this.fns.get(fnName.text);
+      if (!fnRef) return;
+      this.fns.set(fnName.text, null);
+      this.visit(fnRef);
+    }
+  }
+  visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
+    super.visitFunctionDeclaration(node, isDefault, ref);
+    if (!this.fns.has(node.name.text)) this.fns.set(node.name.text, node);
+  }
+  visitSource(node: Source): void {
+    super.visitSource(node);
+  }
+  addTryBlock(exceptions: Exception[], statements: Statement[], tryBlock: BlockStatement): void {
+    if (!statements.length) return;
+    for (const stmt of statements) {
       const hasException = exceptions.find((v) => v.base == stmt);
       if (!hasException) {
         tryBlock.statements.push(stmt);
         continue;
       }
 
-      const exceptionNode = hasException.node;
       const exceptionBase = hasException.base;
       const exceptionType = hasException.type;
 
+      if (exceptionType == ExceptionType.Abort) {
+        const exceptionNode = hasException.node as CallExpression;
+        const exceptionIndex = statements.indexOf(exceptionNode);
+        const remainingStatements = (exceptionIndex + 2 < statements.length)
+          ? statements.slice(exceptionIndex + 2)
+          : [];
+        exceptions.splice(exceptionIndex, 1);
 
-      const replacer = new ExceptionReplacer();
-      console.log("node: " + toString(exceptionNode))
-      // @ts-ignore: type
-      replacer.visit(exceptionBase, node.bodyStatements);
+        const newException = Node.createExpressionStatement(
+          Node.createCallExpression(
+            Node.createIdentifierExpression(
+              "__try_abort",
+              exceptionNode.expression.range
+            ),
+            null,
+            exceptionNode.args,
+            exceptionNode.range
+          )
+        );
+
+        const sucBlock = Node.createIfStatement(
+          Node.createUnaryPrefixExpression(
+            Token.Exclamation,
+            Node.createPropertyAccessExpression(
+              Node.createIdentifierExpression(
+                "ExceptionState",
+                exceptionBase.range
+              ),
+              Node.createIdentifierExpression(
+                "Failed",
+                exceptionBase.range
+              ),
+              exceptionBase.range
+            ),
+            exceptionBase.range
+          ),
+          Node.createBlockStatement(
+            remainingStatements,
+            exceptionBase.range
+          ),
+          null,
+          exceptionBase.range
+        );
+        tryBlock.statements.push(newException, sucBlock);
+        if (exceptions.length && remainingStatements.length) this.addTryBlock(exceptions, remainingStatements, sucBlock.ifTrue as BlockStatement)
+        return;
+      }
     }
-
-    this.foundExceptions = [];
-  }
-  visitCallExpression(node: CallExpression, ref?: Node | null): void {
-    const name = node.expression as IdentifierExpression;
-    if (name.text == "abort") {
-      this.foundExceptions.push(node);
-    }
-  }
-  visitSource(node: Source): void {
-    super.visitSource(node);
-  }
-}
-
-class ExceptionReplacer extends Visitor {
-  
-  visitCallExpression(node: CallExpression, ref?: Node | null): void {
-    const name = node.expression as IdentifierExpression;
-    if (name.text != "abort") return;
-    node.expression.text = "__try_abort";
-    console.log(toString(node))
-    console.log("ref: ", ref);
-
-    if (Array.isArray(ref)) {
-      console.log("Ref is an array");
-
-    }
-  }
-  static replace(exception: Exception, stmts: Node[]): Node[] {
-    const replacer = new ExceptionReplacer();
-
-    const exceptionIndex = 
-    replacer.visit(exception);
   }
 }
 
 export default class Transformer extends Transform {
   afterParse(parser: Parser): void {
     const transformer = new TryTransform();
-    const sources = parser.sources.sort((_a, _b) => {
-      const a = _a.internalPath;
-      const b = _b.internalPath;
-      if (a[0] == "~" && b[0] !== "~") {
-        return -1;
-      } else if (a[0] !== "~" && b[0] == "~") {
-        return 1;
-      } else {
-        return 0;
-      }
-    });
 
-    for (const source of sources) {
+    for (const source of parser.sources) {
       transformer.currentSource = source;
       transformer.visit(source);
     }
@@ -133,6 +220,25 @@ function getExceptionType(node: Node): ExceptionType | null {
   return null;
 }
 
-function findRecursive(node: Node, stmts: Node[]): Node {
-  // this should search for node and return the stmts index that it was found. use a visitor
+class Finder extends Visitor {
+  public findNode: Node;
+  public foundNode: Node | null = null;
+  constructor(findNode: Node) {
+    super();
+    this.findNode = findNode;
+  }
+  _visit(node: Node, ref: Node | null): void {
+    if (this.foundNode) return;
+
+    if (node == this.findNode) this.foundNode = node;
+    else super._visit(node, ref);
+  }
+}
+
+function findRecursive(node: Node, stmts: Node[]): Node | null {
+  for (const stmt of stmts) {
+    const finder = new Finder(stmt);
+    if (finder.foundNode) return stmt;
+  }
+  return null;
 }

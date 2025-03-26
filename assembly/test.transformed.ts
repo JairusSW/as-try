@@ -1,38 +1,25 @@
-import { AbortState } from "./types";
-
+import {
+  AbortState,
+  Exception,
+  ExceptionState,
+  ExceptionType
+} from "./types"
 {
-  // Try Block
-  // Only replace `abort` calls within a try block
-  abort("Failed to execute!");
-  if (!AbortState.failed) {
+  __try_abort("Failed to execute!");
+  if (!ExceptionState.Failed) {
     console.log("This should not execute");
   }
 }
 {
-  // Catch Block
-  if (AbortState.failed) {
-    // Reset abort status
-    AbortState.failed = false;
-    console.log("Got an error: " + AbortState.msg!);
-  }
+  let e = new Exception(ExceptionType.Abort);
+  console.log("Got an error: " + e.toString());
 }
 {
-  // Finally Block
   console.log("Gracefully shutting down...");
   process.exit(0);
 }
-
-function doSomething(shouldCrash: boolean = false): string {
-  if (shouldCrash) {
-    __try_abort("Function 'doSomething' failed to execute properly!");
-    return changetype<string>(0); // This would need to change later. 
-  } else {
-    return "Operation succeeded in 512ms";
-  }
-}
-
-@inline function __try_abort(msg: string | null = null, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
-  AbortState.failed = true;
+function __try_abort(msg: string | null = null, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
+  ExceptionState.Failed = true;
   AbortState.msg = msg;
   AbortState.fileName = fileName;
   AbortState.lineNumber = lineNumber;
