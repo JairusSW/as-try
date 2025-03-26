@@ -1,85 +1,103 @@
 import { Transform } from "assemblyscript/dist/transform.js";
-import { Parser, Node, Tokenizer, Source } from "assemblyscript/dist/assemblyscript.js";
-import { BaseVisitor } from "visitor-as/dist/index.js";
-class TryCatchVisitor extends BaseVisitor {
-    constructor() {
-        super(...arguments);
-        this.stopNextVisit = false;
-    }
-    visitFunctionDeclaration(node) {
-        if (node.name.text === "__try_abort")
-            this.stopNextVisit = true;
-    }
-    visitCallExpression(node) {
-        if (this.stopNextVisit) {
-            this.stopNextVisit = false;
-            return;
+import { Node, Range } from "assemblyscript/dist/assemblyscript.js";
+import { Visitor } from "./visitor.js";
+import { toString } from "./util.js";
+import { Exception, ExceptionType } from "./types.js";
+class TryTransform extends Visitor {
+    foundExceptions = [];
+    visitTryStatement(node, ref) {
+        console.log("Found try: " + toString(node));
+        this.foundExceptions = [];
+        let exceptions = [];
+        for (const stmt of node.bodyStatements) {
+            this.visit(stmt);
+            if (!this.foundExceptions.length)
+                continue;
+            const baseException = this.foundExceptions[0];
+            const ex = new Exception(getExceptionType(baseException), baseException, stmt);
+            console.log("Found base exception: " + toString(baseException));
+            for (let i = 1; i < this.foundExceptions.length; i++) {
+                const childException = this.foundExceptions[i];
+                const exChild = new Exception(getExceptionType(childException), childException, stmt);
+                ex.children.push(exChild);
+                console.log("Found child exception: " + toString(childException));
+            }
+            exceptions.push(ex);
+            this.foundExceptions = [];
         }
-        if (node.expression.text != "abort")
+        if (!exceptions.length)
             return;
-        node.expression = Node.createIdentifierExpression("__try_abort", node.range, false);
+        const tryBlock = Node.createBlockStatement([], new Range(node.bodyStatements[0].range.start, node.bodyStatements[node.bodyStatements.length - 1].range.end));
+        for (const stmt of node.bodyStatements) {
+            const hasException = exceptions.find((v) => v.base == stmt);
+            if (!hasException) {
+                tryBlock.statements.push(stmt);
+                continue;
+            }
+            const exceptionNode = hasException.node;
+            const exceptionBase = hasException.base;
+            const exceptionType = hasException.type;
+            const replace = new ExceptionReplacer();
+            console.log("node: " + toString(exceptionNode));
+            replace.visit(exceptionBase, node.bodyStatements);
+        }
+        this.foundExceptions = [];
+    }
+    visitCallExpression(node, ref) {
+        const name = node.expression;
+        if (name.text == "abort") {
+            this.foundExceptions.push(node);
+        }
     }
     visitSource(node) {
         super.visitSource(node);
     }
 }
-export default class TryCatchTransform extends Transform {
-    afterParse(parser) {
-        parser.parseFile(`@global let __TRY_CATCH_ERRORS: boolean = false;
-        @global let __TRY_FAIL: boolean = false;
-        @global let __TRY_ERROR: string = "";`, "as-try/globals.ts", true);
-        const srcStart = parser.sources[0];
-        parser.sources.splice(0, 1, parser.sources[parser.sources.length - 1]);
-        parser.sources.splice(parser.sources.length - 1, 1, srcStart);
-        const visitor = new TryCatchVisitor();
-        for (const source of parser.sources) {
-            let hasTryStmt = false;
-            if (source.isLibrary)
-                continue;
-            for (let i = 0; i < source.statements.length; i++) {
-                const stmt = source.statements[i];
-                if (stmt.kind === 46 /* NodeKind.Try */) {
-                    hasTryStmt = true;
-                    const tryStmt = stmt;
-                    const tryStmts = tryStmt.bodyStatements;
-                    const catchStmts = tryStmt.catchStatements;
-                    const finallyStmts = tryStmt.finallyStatements;
-                    const catchVar = tryStmt.catchVariable;
-                    if (catchStmts) {
-                        const catch_on = parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_CATCH_ERRORS = true")));
-                        tryStmts.unshift(catch_on);
-                        const catch_off = parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_CATCH_ERRORS = false")));
-                        tryStmts.push(catch_off);
-                    }
-                    const tryBlock = Node.createBlockStatement(tryStmts, source.range);
-                    if (catchVar) {
-                        catchStmts === null || catchStmts === void 0 ? void 0 : catchStmts.unshift(Node.createVariableStatement(null, [
-                            Node.createVariableDeclaration(catchVar, null, 16 /* CommonFlags.Let */, null, Node.createIdentifierExpression("__TRY_ERROR", source.range, false), source.range)
-                        ], source.range));
-                        catchStmts === null || catchStmts === void 0 ? void 0 : catchStmts.unshift(parser.parseStatement(new Tokenizer(new Source(0 /* SourceKind.User */, "__try_catch_transforms.ts", "__TRY_FAIL = false"))));
-                    }
-                    const catchBlock = catchStmts ? Node.createIfStatement(Node.createIdentifierExpression("__TRY_FAIL", source.range, false), Node.createBlockStatement(catchStmts, source.range), null, source.range) : null;
-                    const finallyBlock = finallyStmts ? Node.createBlockStatement(finallyStmts, source.range) : null;
-                    let placement = i;
-                    source.statements.splice(i, 1, tryBlock);
-                    if (catchBlock)
-                        source.statements.splice(++placement, 0, catchBlock);
-                    if (finallyBlock)
-                        source.statements.splice(++placement, 0, finallyBlock);
-                }
-                visitor.visitSource(source);
-            }
-            if (hasTryStmt) {
-                hasTryStmt = false;
-                const tokenizer = new Tokenizer(new Source(0 /* SourceKind.User */, source.normalizedPath, `@inline function __try_abort(message: string, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
-                            if (!__TRY_CATCH_ERRORS) abort(message, fileName, lineNumber, columnNumber);
-                            __TRY_ERROR = message;
-                            __TRY_FAIL = true;
-                        }`));
-                const parser = new Parser();
-                parser.currentSource = source;
-                source.statements.unshift(parser.parseTopLevelStatement(tokenizer));
-            }
+class ExceptionReplacer extends Visitor {
+    visitCallExpression(node, ref) {
+        const name = node.expression;
+        if (name.text != "abort")
+            return;
+        node.expression.text = "__try_abort";
+        console.log(toString(node));
+        console.log("ref: ", ref);
+        if (Array.isArray(ref)) {
+            console.log("Ref is an array");
         }
     }
 }
+export default class Transformer extends Transform {
+    afterParse(parser) {
+        const transformer = new TryTransform();
+        const sources = parser.sources.sort((_a, _b) => {
+            const a = _a.internalPath;
+            const b = _b.internalPath;
+            if (a[0] == "~" && b[0] !== "~") {
+                return -1;
+            }
+            else if (a[0] !== "~" && b[0] == "~") {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        });
+        for (const source of sources) {
+            transformer.currentSource = source;
+            transformer.visit(source);
+        }
+    }
+}
+function getExceptionType(node) {
+    if (node.kind == 45)
+        return ExceptionType.Throw;
+    if (node.kind == 9) {
+        const name = node.expression.text;
+        if (name == "abort")
+            return ExceptionType.Abort;
+        if (name == "unreachable")
+            return ExceptionType.Unreachable;
+    }
+    return null;
+}
+//# sourceMappingURL=index.js.map

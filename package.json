@@ -1,39 +1,55 @@
 {
   "name": "as-try",
   "version": "0.1.0",
-  "description": "",
-  "types": "assembly/index.ts",
   "author": "Jairus Tanaka",
-  "contributors": [],
+  "description": "Exception handling for AssemblyScript",
+  "types": "assembly/index.ts",
+  "main": "transform/lib/index.js",
+  "homepage": "https://github.com/JairusSW/json-as#readme",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JairusSW/json-as.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JairusSW/json-as/issues"
+  },
   "scripts": {
-    "build:test": "asc assembly/test.ts -o build/test.wasm --transform ./transform/lib/index.js --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json",
+    "test": "bash ./run-tests.sh",
+    "bench:as": "bash ./run-bench.as.sh",
+    "bench:js": "bash ./run-bench.js.sh",
+    "build:time": "time npx asc ./assembly/__benches__/abc.bench.ts --transform ./transform -o ./build/abc.bench.wasm --optimizeLevel 3 --shrinkLevel 0 --converge --noAssert --uncheckedBehavior always --runtime stub --enable simd --enable bulk-memory",
+    "build:test": "rm -rf ./build/ && JSON_DEBUG=true asc --lib ./lib/ assembly/test.ts --transform ./transform -o ./build/test.wasm --textFile ./build/test.wat --optimizeLevel 3 --shrinkLevel 0",
+    "build:test:simd": "rm -rf ./build/ && JSON_DEBUG=true asc assembly/test.ts --transform ./transform -o ./build/test.wasm --textFile ./build/test.wat --optimizeLevel 3 --shrinkLevel 0 --enable simd",
+    "test:wasmtime": "wasmtime ./build/test.wasm",
+    "test:wasmer": "wasmer ./build/test.wasm",
     "build:transform": "tsc -p ./transform",
-    "test:wasmtime": "wasmtime ./build/test.wasm"
+    "bench:wasmer": "wasmer ./build/bench.wasm --llvm",
+    "prettier": "prettier -w ."
   },
   "devDependencies": {
     "@assemblyscript/wasi-shim": "^0.1.0",
-    "assemblyscript": "^0.27.22",
-    "typescript": "^5.4.5",
-    "visitor-as": "^0.11.4"
+    "@types/node": "^22.13.10",
+    "assemblyscript": "^0.27.35",
+    "assemblyscript-prettier": "^3.0.1",
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   },
-  "dependencies": {},
-  "overrides": {
-    "assemblyscript": "$assemblyscript"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JairusSW/as-try.git"
-  },
+  "contributors": [],
   "keywords": [
-    "assemblyscript"
+    "assemblyscript",
+    "exception",
+    "handling",
+    "try",
+    "catch",
+    "error",
+    "abort",
+    "throw",
+    "result"
   ],
-  "bugs": {
-    "url": "https://github.com/JairusSW/as-try/issues"
-  },
-  "homepage": "https://github.com/JairusSW/as-try#readme",
-  "type": "module",
   "publishConfig": {
     "@JairusSW:registry": "https://npm.pkg.github.com"
-  }
+  },
+  "type": "module"
 }
