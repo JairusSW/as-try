@@ -47,7 +47,7 @@ Alternatively, add it to your `asconfig.json`
 }
 ```
 
-If you'd like to see the code that the transform generates, run with `DEBUG=true`
+If you'd like to see the code that the transform generates, run the build step with `DEBUG=true`
 
 ## 🪄 Usage
 

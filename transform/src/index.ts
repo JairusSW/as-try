@@ -21,7 +21,7 @@ import { RangeTransform } from "./range.js";
 class TryTransform extends Visitor {
   public searching: boolean = false;
   public foundExceptions: Node[] = [];
-  public fns: Map<string,FunctionDeclaration | null> = new Map<string, FunctionDeclaration | null>();
+  public fns: Map<string, FunctionDeclaration | null> = new Map<string, FunctionDeclaration | null>();
   public baseStatements: Node[] = [];
   visitTryStatement(node: TryStatement, ref?: Node | Node[] | null): void {
     this.baseStatements = node.bodyStatements;
@@ -59,18 +59,7 @@ class TryTransform extends Visitor {
       this.baseStatements[this.baseStatements.length - 1].range.end
     ));
 
-    let catchBlock = Node.createBlockStatement(node.catchStatements, new Range(
-      node.catchStatements[0].range.start,
-      node.catchStatements[node.catchStatements.length - 1].range.end
-    ));
-
-    const finallyBlock = node.finallyStatements.length ? Node.createBlockStatement(node.finallyStatements, new Range(
-      node.finallyStatements[0].range.start,
-      node.finallyStatements[node.finallyStatements.length - 1].range.end
-    )) : null;
-
-    this.addTryBlock(exceptions, this.baseStatements, tryBlock);
-
+    
     const catchVar = Node.createVariableStatement(
       null,
       [
@@ -103,13 +92,41 @@ class TryTransform extends Visitor {
       node.range
     );
 
-    catchBlock.statements.unshift(catchVar)
+    let catchBlock = Node.createIfStatement(
+      Node.createPropertyAccessExpression(
+        Node.createIdentifierExpression(
+          "ExceptionState",
+          node.range
+        ),
+        Node.createIdentifierExpression(
+          "Failed",
+          node.range
+        ),
+        node.range
+      ),
+      Node.createBlockStatement([
+        ...[
+          Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(
+            node.catchStatements[0].range.start,
+            node.catchStatements[node.catchStatements.length - 1].range.end
+          )),
+          node.finallyStatements.length ? Node.createBlockStatement(node.finallyStatements, new Range(
+            node.finallyStatements[0].range.start,
+            node.finallyStatements[node.finallyStatements.length - 1].range.end
+          )) : null
+        ].filter((v) => v != null)
+      ], node.range),
+      null,
+      node.range
+    );
+
+    this.addTryBlock(exceptions, this.baseStatements, tryBlock);
+
     this.foundExceptions = [];
     console.log(toString(tryBlock));
     console.log(toString(catchBlock));
-    console.log(toString(finallyBlock));
     const baseIndex = (ref as Node[]).indexOf(node);
-    (ref as Node[]).splice(baseIndex, 1, tryBlock, catchBlock, finallyBlock);
+    (ref as Node[]).splice(baseIndex, 1, tryBlock, catchBlock);
 
     const replacer = new RangeTransform(node);
     replacer.visit(tryBlock);
