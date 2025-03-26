@@ -1,5 +1,6 @@
 import { AbortState, Exception, ExceptionState, ExceptionType } from "./types";
 
+throw new Error("This is a message")
 try {
   // Do something
   abort("Failed to execute!", "test.ts");
