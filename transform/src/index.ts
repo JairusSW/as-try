@@ -175,9 +175,16 @@ class TryTransform extends Visitor {
 
         const newException = Node.createExpressionStatement(
           Node.createCallExpression(
-            Node.createIdentifierExpression(
-              "__try_abort",
-              exceptionNode.expression.range
+            Node.createPropertyAccessExpression(
+              Node.createIdentifierExpression(
+                "AbortState",
+                exceptionNode.range
+              ),
+              Node.createIdentifierExpression(
+                "abort",
+                exceptionNode.range
+              ),
+              exceptionNode.range
             ),
             null,
             exceptionNode.args,

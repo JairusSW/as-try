@@ -98,7 +98,7 @@ class TryTransform extends Visitor {
                     ? statements.slice(exceptionIndex + 2)
                     : [];
                 exceptions.splice(exceptionIndex, 1);
-                const newException = Node.createExpressionStatement(Node.createCallExpression(Node.createIdentifierExpression("__try_abort", exceptionNode.expression.range), null, exceptionNode.args, exceptionNode.range));
+                const newException = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("AbortState", exceptionNode.range), Node.createIdentifierExpression("abort", exceptionNode.range), exceptionNode.range), null, exceptionNode.args, exceptionNode.range));
                 const sucBlock = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", exceptionBase.range), Node.createIdentifierExpression("Failed", exceptionBase.range), exceptionBase.range), exceptionBase.range), Node.createBlockStatement(remainingStatements, exceptionBase.range), null, exceptionBase.range);
                 tryBlock.statements.push(newException, sucBlock);
                 if (exceptions.length && remainingStatements.length)

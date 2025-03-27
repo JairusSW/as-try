@@ -1,27 +1,61 @@
-import {
-  AbortState,
-  Exception,
-  ExceptionState,
-  ExceptionType
-} from "./types"
-{
-  __try_abort("Failed to execute!");
-  if (!ExceptionState.Failed) {
-    console.log("This should not execute");
+import { AbortState } from "./types/abort";
+import { ExceptionState, Exception } from "./types/exception";
+
+// 1st Level Abort
+// ExceptionState.Failed = false;
+// {
+//   AbortState.abort("Failed to execute!", "test.ts");
+//   if (!ExceptionState.Failed) {
+//     console.log("This should not execute");
+//   }
+// }
+// if (ExceptionState.Failed) {
+//   {
+//     let e = new Exception(ExceptionState.Type);
+//     console.log("Got an error: " + e.toString());
+//   }
+//   {
+//     console.log("Finished");
+//   }
+// }
+export function example(): void {
+  do {
+    console.log("Hey")
+    if (true) break;
+    console.log("skipped")
+  } while (0)
+
+  console.log('LOL')
+}
+
+
+function doSomething(shouldAbort: boolean = false): string {
+  doSomethingElse(shouldAbort);
+  if (ExceptionState.Failed) return changetype<string>(4294967295);
+  return "Function 'doSomething' executed properly";
+}
+
+function doSomethingElse(shouldAbort: boolean = false): void {
+  if (shouldAbort) {
+    AbortState.abort("Function 'doSomething' failed to execute properly!");
+    // Since it's void, I can return here or jump to the branch
+    return;
   }
+  console.log("This should not execute");
 }
+
+// 2nd Level Abort
+ExceptionState.Failed = false;
 {
-  let e = new Exception(ExceptionType.Abort);
-  console.log("Got an error: " + e.toString());
+  const foo = doSomething((false));
+  if (!ExceptionState.Failed) console.log(foo);
 }
-{
-  console.log("Gracefully shutting down...");
-  process.exit(0);
-}
-function __try_abort(msg: string | null = null, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
-  ExceptionState.Failed = true;
-  AbortState.msg = msg;
-  AbortState.fileName = fileName;
-  AbortState.lineNumber = lineNumber;
-  AbortState.columnNumber = columnNumber;
+if (ExceptionState.Failed) {
+  {
+    let e = new Exception(ExceptionState.Type);
+    console.log("Got an error: " + e.toString());
+  }
+  {
+    console.log("Finished");
+  }
 }
