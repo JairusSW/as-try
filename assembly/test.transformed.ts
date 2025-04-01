@@ -48,7 +48,9 @@ function doSomethingElse(shouldAbort: boolean = false): void {
 ExceptionState.Failed = false;
 {
   const foo = doSomething((false));
-  if (!ExceptionState.Failed) console.log(foo);
+  if (!ExceptionState.Failed){ 
+    console.log(foo);
+  }
 }
 if (ExceptionState.Failed) {
   {

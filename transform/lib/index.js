@@ -1,11 +1,12 @@
 import { Transform } from "assemblyscript/dist/transform.js";
 import { Node, Range } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./visitor.js";
-import { isPrimitive, replaceRef, toString } from "./util.js";
+import { isPrimitive, replaceAfter, replaceRef, stripExpr, toString } from "./util.js";
 import { ExceptionType } from "./types.js";
 class FunctionData {
     node;
     ref;
+    linked = false;
     constructor(node, ref) {
         this.node = node;
         this.ref = ref;
@@ -70,20 +71,34 @@ class ExceptionLinker extends Visitor {
                 replaceRef(node, Node.createBlockStatement([newException, returnStmt], node.range), ref);
             else
                 replaceRef(node, [newException, returnStmt], ref);
-            console.log("Ref: " + toString(ref));
         }
         else {
             const linked = FunctionLinker.getFunction(fnName.text);
             if (!linked)
                 return;
             const linkedFn = linked.node;
-            const overrideFn = Node.createFunctionDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, linkedFn.name.range), linkedFn.decorators, linkedFn.flags, linkedFn.typeParameters, linkedFn.signature, linkedFn.body, linkedFn.arrowKind, linkedFn.range);
-            replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
+            if (!linked.linked) {
+                const overrideFn = Node.createFunctionDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, linkedFn.name.range), linkedFn.decorators, linkedFn.flags, linkedFn.typeParameters, linkedFn.signature, linkedFn.body, linkedFn.arrowKind, linkedFn.range);
+                replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
+                linked.linked = true;
+                this.visit(overrideFn);
+                console.log("Linked Fn: " + toString(overrideFn));
+            }
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(Node.createIdentifierExpression("__try_" + fnName.text, node.expression.range), node.typeArguments, node.args, node.range));
-            replaceRef(node, overrideCall, ref);
+            const remainingStmts = Array.isArray(ref)
+                ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
+                : -1;
+            console.log("Refff: " + toString(ref) + " " + remainingStmts + " " + ref.length);
+            if (remainingStmts != -1 && remainingStmts < ref.length) {
+                const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
+                console.log("Error Check:" + toString(errorCheck));
+                super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
+                replaceAfter(node, [overrideCall, errorCheck], ref);
+            }
+            else {
+                replaceRef(node, overrideCall, ref);
+            }
             console.log("Link: " + toString(overrideCall));
-            this.visit(overrideFn);
-            console.log("Linked Fn: " + toString(overrideFn));
         }
     }
     visitFunctionDeclaration(node, isDefault, ref) {
@@ -104,7 +119,7 @@ class TryTransform extends Visitor {
         this.baseStatements = node.bodyStatements;
         console.log("Found try: " + toString(node));
         this.foundExceptions = [];
-        const beforeTry = Node.createBinaryExpression(101, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createIdentifierExpression("false", node.range), node.range);
+        const beforeTry = Node.createExpressionStatement(Node.createBinaryExpression(101, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createFalseExpression(node.range), node.range));
         const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(this.baseStatements[0].range.start, this.baseStatements[this.baseStatements.length - 1].range.end));
         ExceptionLinker.replace(tryBlock);
         console.log("Before Try: " + toString(beforeTry));
@@ -134,33 +149,6 @@ class TryTransform extends Visitor {
         super.visitSource(node);
         FunctionLinker.reset();
         console.log("Source: " + toString(node));
-    }
-    addTryBlock(exceptions, statements, tryBlock) {
-        if (!statements.length)
-            return;
-        for (const stmt of statements) {
-            const hasException = exceptions.find((v) => v.base == stmt);
-            if (!hasException) {
-                tryBlock.statements.push(stmt);
-                continue;
-            }
-            const exceptionBase = hasException.base;
-            const exceptionType = hasException.type;
-            if (exceptionType == ExceptionType.Abort) {
-                const exceptionNode = hasException.node;
-                const exceptionIndex = statements.indexOf(exceptionNode);
-                const remainingStatements = (exceptionIndex + 2 < statements.length)
-                    ? statements.slice(exceptionIndex + 2)
-                    : [];
-                exceptions.splice(exceptionIndex, 1);
-                const newException = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("AbortState", exceptionNode.range), Node.createIdentifierExpression("abort", exceptionNode.range), exceptionNode.range), null, exceptionNode.args, exceptionNode.range));
-                const sucBlock = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", exceptionBase.range), Node.createIdentifierExpression("Failed", exceptionBase.range), exceptionBase.range), exceptionBase.range), Node.createBlockStatement(remainingStatements, exceptionBase.range), null, exceptionBase.range);
-                tryBlock.statements.push(newException, sucBlock);
-                if (exceptions.length && remainingStatements.length)
-                    this.addTryBlock(exceptions, remainingStatements, sucBlock.ifTrue);
-                return;
-            }
-        }
     }
 }
 export default class Transformer extends Transform {

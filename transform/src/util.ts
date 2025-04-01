@@ -88,6 +88,37 @@ export function replaceRef(node: Node, replacement: Node | Node[], ref: Node | N
   }
 }
 
+export function replaceAfter(node: Node, replacement: Node | Node[], ref: Node | Node[] | null): void {
+  if (!node || !ref) return;
+  const nodeExpr = stripExpr(node);
+
+  if (Array.isArray(ref)) {
+    let found = false;
+    for (let i = 0; i < ref.length; i++) {
+      if (found || stripExpr(ref[i]) === nodeExpr) {
+        ref.splice(i, ref.length - i, ...(Array.isArray(replacement) ? replacement : [replacement]));
+        return;
+      }
+    }
+  } else if (typeof ref === 'object') {
+    for (const key of Object.keys(ref)) {
+      const current = ref[key] as Node | Node[];
+      if (Array.isArray(current)) {
+        let found = false;
+        for (let i = 0; i < current.length; i++) {
+          if (found || stripExpr(current[i]) === nodeExpr) {
+            current.splice(i, current.length - i, ...(Array.isArray(replacement) ? replacement : [replacement]));
+            return;
+          }
+        }
+      } else if (stripExpr(current) === nodeExpr) {
+        ref[key] = replacement;
+        return;
+      }
+    }
+  }
+}
+
 
 export function stripExpr(node: Node): Node {
   if (!node) return node;
