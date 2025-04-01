@@ -57,31 +57,37 @@ export function toString(node: Node | Node[] | null): string {
   return ASTBuilder.build(node);
 }
 
-export function replaceRef(node: Node, replacement: Node, ref: Node | Node[] | null): void {
-  if (!node) return;
+export function replaceRef(node: Node, replacement: Node | Node[], ref: Node | Node[] | null): void {
+  if (!node || !ref) return;
   const nodeExpr = stripExpr(node);
+
   if (Array.isArray(ref)) {
     for (let i = 0; i < ref.length; i++) {
-      const r = stripExpr(ref[i]);
-      if (r == nodeExpr) {
-        ref[i] = replacement;
-        break;
+      if (stripExpr(ref[i]) === nodeExpr) {
+        if (Array.isArray(replacement)) ref.splice(i, 1, ...replacement);
+        else ref[i] = replacement;
+        return; // Exit early after replacement
       }
     }
-    const nodeIndex = ref.indexOf(node);
-    if (nodeIndex == -1) return;
-    ref[nodeIndex] = replacement;
-  } else {
-    const keys = Object.keys(ref);
-    for (const key of keys) {
-      const nV = stripExpr(ref[key] as Node);
-      if (nV == nodeExpr) {
+  } else if (typeof ref === 'object') {
+    for (const key of Object.keys(ref)) {
+      const current = ref[key] as Node | Node[];
+      if (Array.isArray(current)) {
+        for (let i = 0; i < current.length; i++) {
+          if (stripExpr(current[i]) === nodeExpr) {
+            if (Array.isArray(replacement)) current.splice(i, 1, ...replacement);
+            else current[i] = replacement;
+            return;
+          }
+        }
+      } else if (stripExpr(current) === nodeExpr) {
         ref[key] = replacement;
-        break;
+        return;
       }
     }
   }
 }
+
 
 export function stripExpr(node: Node): Node {
   if (!node) return node;
@@ -106,4 +112,9 @@ export function nodeEq(a: Node, b: Node): boolean {
   }
 
   return true;
+}
+
+export function isPrimitive(type: string): boolean {
+  const primitiveTypes = ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "bool", "boolean"];
+  return primitiveTypes.some((v) => type.startsWith(v));
 }

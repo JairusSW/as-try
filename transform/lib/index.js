@@ -1,7 +1,7 @@
 import { Transform } from "assemblyscript/dist/transform.js";
 import { Node, Range } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./visitor.js";
-import { replaceRef, toString } from "./util.js";
+import { isPrimitive, replaceRef, toString } from "./util.js";
 import { ExceptionType } from "./types.js";
 class FunctionLinker extends Visitor {
     static SN = new FunctionLinker();
@@ -39,11 +39,29 @@ class FunctionLinker extends Visitor {
 }
 class ExceptionLinker extends Visitor {
     static SN = new ExceptionLinker();
+    fn = null;
     visitCallExpression(node, ref) {
         const fnName = node.expression;
         if (fnName.text == "abort") {
             const newException = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range));
-            replaceRef(node, newException, ref);
+            let returnStmt = Node.createReturnStatement(null, node.range);
+            if (this.fn) {
+                const returnType = toString(this.fn.signature.returnType);
+                console.log("Return Type: " + returnType);
+                if (returnType != "void" && returnType != "never") {
+                    returnStmt = Node.createReturnStatement(isPrimitive(returnType)
+                        ? returnType == "f32" || returnType == "f64"
+                            ? Node.createFloatLiteralExpression(0, node.range)
+                            : Node.createIntegerLiteralExpression(i64_zero, node.range)
+                        : Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [this.fn.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range);
+                    console.log("Return: " + toString(returnStmt));
+                }
+            }
+            console.log("Return: " + toString(returnStmt));
+            if (!Array.isArray(ref))
+                replaceRef(node, Node.createBlockStatement([newException, returnStmt], node.range), ref);
+            else
+                replaceRef(node, [newException, returnStmt], ref);
             console.log("Ref: " + toString(ref));
         }
         else {
@@ -54,9 +72,14 @@ class ExceptionLinker extends Visitor {
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(Node.createIdentifierExpression("__try_" + fnName.text, node.expression.range), node.typeArguments, node.args, node.range));
             replaceRef(node, overrideCall, ref);
             console.log("Link: " + toString(overrideCall));
-            this.visit(overrideFn.body);
+            this.visit(overrideFn);
             console.log("Linked Fn: " + toString(overrideFn));
         }
+    }
+    visitFunctionDeclaration(node, isDefault, ref) {
+        this.fn = node;
+        super.visitFunctionDeclaration(node, isDefault, ref);
+        this.fn = null;
     }
     static replace(node) {
         ExceptionLinker.SN.visit(node);

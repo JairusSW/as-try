@@ -13,7 +13,9 @@ import { ExceptionState, Exception } from "./types/exception";
 // }
 
 function doSomething(shouldAbort: boolean = false): void {
-  if (shouldAbort) abort("Function 'doSomething' failed to execute properly!");
+  if (shouldAbort) {
+    abort("Function 'doSomething' failed to execute properly!");
+  }
   console.log("This should not execute");
 }
 

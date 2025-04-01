@@ -49,29 +49,37 @@ export function toString(node) {
     return ASTBuilder.build(node);
 }
 export function replaceRef(node, replacement, ref) {
-    if (!node)
+    if (!node || !ref)
         return;
     const nodeExpr = stripExpr(node);
     if (Array.isArray(ref)) {
         for (let i = 0; i < ref.length; i++) {
-            const r = stripExpr(ref[i]);
-            if (r == nodeExpr) {
-                ref[i] = replacement;
-                break;
+            if (stripExpr(ref[i]) === nodeExpr) {
+                if (Array.isArray(replacement))
+                    ref.splice(i, 1, ...replacement);
+                else
+                    ref[i] = replacement;
+                return;
             }
         }
-        const nodeIndex = ref.indexOf(node);
-        if (nodeIndex == -1)
-            return;
-        ref[nodeIndex] = replacement;
     }
-    else {
-        const keys = Object.keys(ref);
-        for (const key of keys) {
-            const nV = stripExpr(ref[key]);
-            if (nV == nodeExpr) {
+    else if (typeof ref === 'object') {
+        for (const key of Object.keys(ref)) {
+            const current = ref[key];
+            if (Array.isArray(current)) {
+                for (let i = 0; i < current.length; i++) {
+                    if (stripExpr(current[i]) === nodeExpr) {
+                        if (Array.isArray(replacement))
+                            current.splice(i, 1, ...replacement);
+                        else
+                            current[i] = replacement;
+                        return;
+                    }
+                }
+            }
+            else if (stripExpr(current) === nodeExpr) {
                 ref[key] = replacement;
-                break;
+                return;
             }
         }
     }
@@ -103,5 +111,9 @@ export function nodeEq(a, b) {
             return false;
     }
     return true;
+}
+export function isPrimitive(type) {
+    const primitiveTypes = ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "bool", "boolean"];
+    return primitiveTypes.some((v) => type.startsWith(v));
 }
 //# sourceMappingURL=util.js.map
