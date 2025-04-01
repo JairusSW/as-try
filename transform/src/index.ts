@@ -20,15 +20,25 @@ import { CallExpression, FunctionDeclaration, FunctionExpression, ThrowStatement
 import { Exception, ExceptionType } from "./types.js";
 import { RangeTransform } from "./range.js";
 
+
+class FunctionData {
+  public node: FunctionDeclaration;
+  public ref: Node | Node[] | null;
+  constructor(node: FunctionDeclaration, ref: Node | Node[] | null) {
+    this.node = node;
+    this.ref = ref;
+  }
+}
+
 class FunctionLinker extends Visitor {
   static SN: FunctionLinker = new FunctionLinker();
-  public fns: FunctionDeclaration[] = [];
+  public fns: FunctionData[] = [];
   public foundException: boolean = false;
   visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
     this.foundException = false
     super.visitFunctionDeclaration(node, isDefault, ref);
     if (!this.foundException) return;
-    this.fns.push(node);
+    this.fns.push(new FunctionData(node, ref));
   }
   visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
     const fnName = node.expression as IdentifierExpression;
@@ -42,11 +52,11 @@ class FunctionLinker extends Visitor {
   static visit(source: Source): void {
     FunctionLinker.SN.visitSource(source);
   }
-  static getFunction(fnName: string): FunctionDeclaration | null {
-    return FunctionLinker.SN.fns.find((v) => v.name.text == fnName);
+  static getFunction(fnName: string): FunctionData | null {
+    return FunctionLinker.SN.fns.find((v) => v.node.name.text == fnName);
   }
   static rmFunction(fnName: string): void {
-    const index = FunctionLinker.SN.fns.findIndex(fn => fn.name.text === fnName);
+    const index = FunctionLinker.SN.fns.findIndex(fn => fn.node.name.text === fnName);
     if (index == -1) return;
 
     FunctionLinker.SN.fns.splice(index, 1);
@@ -119,8 +129,9 @@ class ExceptionLinker extends Visitor {
         replaceRef(node, [newException, returnStmt], ref);
       console.log("Ref: " + toString(ref));
     } else {
-      const linkedFn = FunctionLinker.getFunction(fnName.text);
-      if (!linkedFn) return;
+      const linked = FunctionLinker.getFunction(fnName.text);
+      if (!linked) return;
+      const linkedFn = linked.node;
 
       const overrideFn = Node.createFunctionDeclaration(
         Node.createIdentifierExpression(
@@ -135,6 +146,8 @@ class ExceptionLinker extends Visitor {
         linkedFn.arrowKind,
         linkedFn.range
       );
+
+      replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
@@ -266,7 +279,8 @@ class TryTransform extends Visitor {
       node.range
     );
 
-    console.log("Catch Block: " + toString(catchBlock))
+    console.log("Catch Block: " + toString(catchBlock));
+    replaceRef(node, [beforeTry, tryBlock, catchBlock], ref);
   }
   visitCallExpression(node: CallExpression, ref?: Node | null): void {
     super.visitCallExpression(node, ref);
@@ -289,6 +303,7 @@ class TryTransform extends Visitor {
     FunctionLinker.visit(node);
     super.visitSource(node);
     FunctionLinker.reset();
+    console.log("Source: " + toString(node));
   }
   // genTryableFn(node: FunctionDeclaration): FunctionDeclaration {
   //   const body = this.replaceCalls(node.body);
