@@ -1,5 +1,5 @@
 // Taken from https://github.com/as-pect/visitor-as/blob/master/src/simpleParser.ts
-import { Parser, Tokenizer, Source, SourceKind, Expression, Statement, NamespaceDeclaration, ClassDeclaration, DeclarationStatement, Range, Node } from "assemblyscript/dist/assemblyscript.js";
+import { Parser, Tokenizer, Source, SourceKind, Expression, Statement, NamespaceDeclaration, ClassDeclaration, DeclarationStatement, Range, Node, NodeKind } from "assemblyscript/dist/assemblyscript.js";
 import { ASTBuilder } from "./builder.js";
 
 export class SimpleParser {
@@ -51,6 +51,59 @@ export function isStdlib(s: Source | { range: Range }): boolean {
   return isStdlibRegex.test(source.internalPath);
 }
 
-export function toString(node: Node): string {
+export function toString(node: Node | Node[] | null): string {
+  if (!node) return "null";
+  if (Array.isArray(node)) return node.map((v) => toString(v)).join("\n");
   return ASTBuilder.build(node);
+}
+
+export function replaceRef(node: Node, replacement: Node, ref: Node | Node[] | null): void {
+  if (!node) return;
+  const nodeExpr = stripExpr(node);
+  if (Array.isArray(ref)) {
+    for (let i = 0; i < ref.length; i++) {
+      const r = stripExpr(ref[i]);
+      if (r == nodeExpr) {
+        ref[i] = replacement;
+        break;
+      }
+    }
+    const nodeIndex = ref.indexOf(node);
+    if (nodeIndex == -1) return;
+    ref[nodeIndex] = replacement;
+  } else {
+    const keys = Object.keys(ref);
+    for (const key of keys) {
+      const nV = stripExpr(ref[key] as Node);
+      if (nV == nodeExpr) {
+        ref[key] = replacement;
+        break;
+      }
+    }
+  }
+}
+
+export function stripExpr(node: Node): Node {
+  if (!node) return node;
+  if (node.kind == NodeKind.Expression) return node["expression"];
+  return node;
+}
+
+export function nodeEq(a: Node, b: Node): boolean {
+  if (!a || !b) return false;
+  if (!a["kind"] || !b["kind"]) return false;
+  if (a === b) return true;
+  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+
+  const keys1 = Object.keys(a);
+  const keys2 = Object.keys(b);
+
+  if (keys1 !== keys2) return false;
+
+  for (let key of keys1) {
+    if (!keys2.includes(key)) return false;
+    if (!nodeEq(a[key], b[key])) return false;
+  }
+
+  return true;
 }

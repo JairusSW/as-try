@@ -42,6 +42,66 @@ export function isStdlib(s) {
     return isStdlibRegex.test(source.internalPath);
 }
 export function toString(node) {
+    if (!node)
+        return "null";
+    if (Array.isArray(node))
+        return node.map((v) => toString(v)).join("\n");
     return ASTBuilder.build(node);
+}
+export function replaceRef(node, replacement, ref) {
+    if (!node)
+        return;
+    const nodeExpr = stripExpr(node);
+    if (Array.isArray(ref)) {
+        for (let i = 0; i < ref.length; i++) {
+            const r = stripExpr(ref[i]);
+            if (r == nodeExpr) {
+                ref[i] = replacement;
+                break;
+            }
+        }
+        const nodeIndex = ref.indexOf(node);
+        if (nodeIndex == -1)
+            return;
+        ref[nodeIndex] = replacement;
+    }
+    else {
+        const keys = Object.keys(ref);
+        for (const key of keys) {
+            const nV = stripExpr(ref[key]);
+            if (nV == nodeExpr) {
+                ref[key] = replacement;
+                break;
+            }
+        }
+    }
+}
+export function stripExpr(node) {
+    if (!node)
+        return node;
+    if (node.kind == 38)
+        return node["expression"];
+    return node;
+}
+export function nodeEq(a, b) {
+    if (!a || !b)
+        return false;
+    if (!a["kind"] || !b["kind"])
+        return false;
+    if (a === b)
+        return true;
+    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null)
+        return false;
+    const keys1 = Object.keys(a);
+    const keys2 = Object.keys(b);
+    if (keys1 !== keys2)
+        return false;
+    for (let key of keys1) {
+        if (!keys2.includes(key))
+            return false;
+        if (!nodeEq(a[key], b[key]))
+            return false;
+    }
+    return true;
 }
 //# sourceMappingURL=util.js.map

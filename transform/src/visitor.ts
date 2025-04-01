@@ -228,8 +228,6 @@ export class Visitor {
         this.visitVoidStatement(node as VoidStatement, ref);
         break;
       }
-      default:
-        throw new Error("Could not visit invalid type!");
     }
   }
   visitSource(node: Source, ref: Node | Node[] | null = null): void {

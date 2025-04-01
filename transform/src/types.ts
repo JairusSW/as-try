@@ -1,4 +1,4 @@
-import { CallExpression, Node, ThrowStatement } from "assemblyscript/dist/assemblyscript.js";
+import { Node } from "assemblyscript/dist/assemblyscript.js";
 
 export enum ExceptionType {
   Throw,

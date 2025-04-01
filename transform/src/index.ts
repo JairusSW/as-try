@@ -13,53 +13,158 @@ import {
   CommonFlags
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./visitor.js";
-import { SimpleParser, toString } from "./util.js";
-import { CallExpression, FunctionDeclaration, ThrowStatement } from "types:assemblyscript/src/ast";
+import { replaceRef, toString } from "./util.js";
+import { CallExpression, FunctionDeclaration, FunctionExpression, ThrowStatement } from "types:assemblyscript/src/ast";
 import { Exception, ExceptionType } from "./types.js";
 import { RangeTransform } from "./range.js";
+
+class FunctionLinker extends Visitor {
+  static SN: FunctionLinker = new FunctionLinker();
+  public fns: FunctionDeclaration[] = [];
+  public foundException: boolean = false;
+  visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
+    this.foundException = false
+    super.visitFunctionDeclaration(node, isDefault, ref);
+    if (!this.foundException) return;
+    this.fns.push(node);
+  }
+  visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
+    const fnName = node.expression as IdentifierExpression;
+    if (fnName.text == "abort") this.foundException = true;
+    else super.visitCallExpression(node, ref);
+  }
+  // visitFunctionExpression(node: FunctionExpression, ref?: Node | Node[] | null): void {
+  //   this.functions.push(node);
+  //   super.visitFunctionExpression(node, ref);
+  // }
+  static visit(source: Source): void {
+    FunctionLinker.SN.visitSource(source);
+  }
+  static getFunction(fnName: string): FunctionDeclaration | null {
+    return FunctionLinker.SN.fns.find((v) => v.name.text == fnName);
+  }
+  static rmFunction(fnName: string): void {
+    const index = FunctionLinker.SN.fns.findIndex(fn => fn.name.text === fnName);
+    if (index == -1) return;
+
+    FunctionLinker.SN.fns.splice(index, 1);
+  }
+  static reset(): void {
+    FunctionLinker.SN.fns = [];
+  }
+}
+
+class ExceptionLinker extends Visitor {
+  static SN: ExceptionLinker = new ExceptionLinker();
+
+  visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
+    const fnName = node.expression as IdentifierExpression; // Can also be PropertyAccessExpression
+
+    if (fnName.text == "abort") {
+      const newException = Node.createExpressionStatement(
+        Node.createCallExpression(
+          Node.createPropertyAccessExpression(
+            Node.createIdentifierExpression(
+              "AbortState",
+              node.range
+            ),
+            Node.createIdentifierExpression(
+              "abort",
+              node.range
+            ),
+            node.range
+          ),
+          null,
+          node.args,
+          node.range
+        )
+      );
+
+      replaceRef(node, newException, ref);
+      console.log("Ref: " + toString(ref));
+    } else {
+      const linkedFn = FunctionLinker.getFunction(fnName.text);
+      if (!linkedFn) return;
+
+      const overrideFn = Node.createFunctionDeclaration(
+        Node.createIdentifierExpression(
+          "__try_" + linkedFn.name.text,
+          linkedFn.name.range
+        ),
+        linkedFn.decorators,
+        linkedFn.flags,
+        linkedFn.typeParameters,
+        linkedFn.signature,
+        linkedFn.body,
+        linkedFn.arrowKind,
+        linkedFn.range
+      );
+
+      const overrideCall = Node.createExpressionStatement(
+        Node.createCallExpression(
+          Node.createIdentifierExpression(
+            "__try_" + fnName.text,
+            node.expression.range
+          ),
+          node.typeArguments,
+          node.args,
+          node.range
+        )
+      );
+
+      replaceRef(node, overrideCall, ref);
+
+      console.log("Link: " + toString(overrideCall));
+      this.visit(overrideFn.body);
+      // source.statements.splice(source.statements.indexOf(linkedFn) + 1, 0, overrideFn);
+      console.log("Linked Fn: " + toString(overrideFn));
+    }
+  }
+  static replace(node: Node | Node[]): void {
+    ExceptionLinker.SN.visit(node);
+  }
+}
 
 class TryTransform extends Visitor {
   public searching: boolean = false;
   public foundExceptions: Node[] = [];
-  public fns: Map<string, FunctionDeclaration | null> = new Map<string, FunctionDeclaration | null>();
+  public overrideFns: FunctionDeclaration[] = [];
   public baseStatements: Node[] = [];
   visitTryStatement(node: TryStatement, ref?: Node | Node[] | null): void {
     this.baseStatements = node.bodyStatements;
     console.log("Found try: " + toString(node));
     this.foundExceptions = [];
 
-    let exceptions: Exception[] = [];
+    const beforeTry = Node.createBinaryExpression(
+      Token.Equals,
+      Node.createPropertyAccessExpression(
+        Node.createIdentifierExpression(
+          "ExceptionState",
+          node.range
+        ),
+        Node.createIdentifierExpression(
+          "Failed",
+          node.range
+        ),
+        node.range
+      ),
+      Node.createIdentifierExpression(
+        "false",
+        node.range
+      ),
+      node.range
+    );
 
-    this.searching = true;
-    for (const stmt of this.baseStatements) {
-      this.visit(stmt);
-      if (!this.foundExceptions.length) continue;
-
-      const baseException = this.foundExceptions[0];
-      const ex = new Exception(getExceptionType(baseException), baseException, stmt);
-      console.log("Found base exception: " + toString(baseException));
-
-      for (let i = 1; i < this.foundExceptions.length; i++) {
-        const childException = this.foundExceptions[i];
-        const exChild = new Exception(getExceptionType(childException), childException, stmt);
-        ex.children.push(exChild);
-
-        console.log("Found child exception: " + toString(childException));
-      }
-
-      exceptions.push(ex);
-      this.foundExceptions = [];
-    }
-    this.searching = false;
-
-    if (!exceptions.length) return;
-
-    const tryBlock = Node.createBlockStatement([], new Range(
+    const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(
       this.baseStatements[0].range.start,
       this.baseStatements[this.baseStatements.length - 1].range.end
     ));
+    ExceptionLinker.replace(tryBlock);
 
-    
+    console.log("Before Try: " + toString(beforeTry));
+
+    console.log("Try Block: " + toString(tryBlock));
+
     const catchVar = Node.createVariableStatement(
       null,
       [
@@ -120,39 +225,50 @@ class TryTransform extends Visitor {
       node.range
     );
 
-    this.addTryBlock(exceptions, this.baseStatements, tryBlock);
-
-    this.foundExceptions = [];
-    console.log(toString(tryBlock));
-    console.log(toString(catchBlock));
-    const baseIndex = (ref as Node[]).indexOf(node);
-    (ref as Node[]).splice(baseIndex, 1, tryBlock, catchBlock);
-
-    const replacer = new RangeTransform(node);
-    replacer.visit(tryBlock);
+    console.log("Catch Block: " + toString(catchBlock))
   }
   visitCallExpression(node: CallExpression, ref?: Node | null): void {
-    const fnName = node.expression as IdentifierExpression;
-    if (fnName.text == "abort") {
-      this.foundExceptions.push(node);
-    } else if (this.searching) {
-      if (!this.fns.has(fnName.text)) {
-        console.log("Could not find function " + fnName.text);
-        return;
-      }
-      const fnRef = this.fns.get(fnName.text);
-      if (!fnRef) return;
-      this.fns.set(fnName.text, null);
-      this.visit(fnRef);
-    }
-  }
-  visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
-    super.visitFunctionDeclaration(node, isDefault, ref);
-    if (!this.fns.has(node.name.text)) this.fns.set(node.name.text, node);
+    super.visitCallExpression(node, ref);
+    // const fnName = node.expression as IdentifierExpression;
+    // if (fnName.text == "abort") {
+    //   this.foundExceptions.push(node);
+    //   return;
+    // }
+
+    // const linkedFn = FunctionLinker.getFunction(fnName.text);
+    // if (linkedFn) {
+    //   console.log("Linked Call: " + toString(FunctionLinker.getFunction(fnName.text)));
+    //   const overrideFn = this.genTryableFn(linkedFn);
+    //   FunctionLinker.replace(linkedFn, ...[linkedFn, overrideFn]);
+    // }
   }
   visitSource(node: Source): void {
+    if (!node.normalizedPath.includes("test.ts")) return;
+    this.currentSource = node;
+    FunctionLinker.visit(node);
     super.visitSource(node);
+    FunctionLinker.reset();
   }
+  // genTryableFn(node: FunctionDeclaration): FunctionDeclaration {
+  //   const body = this.replaceCalls(node.body);
+  //   const newFn = Node.createFunctionDeclaration(
+  //     Node.createIdentifierExpression(
+  //       "__try_" + node.name.text,
+  //       node.range
+  //     ),
+  //     null,
+  //     node.flags,
+  //     node.typeParameters,
+  //     node.signature,
+  //     body,
+  //     node.arrowKind,
+  //     node.range
+  //   );
+  //   return newFn;
+  // }
+  // replaceCalls(node: Statement): Statement[] {
+
+  // }
   addTryBlock(exceptions: Exception[], statements: Statement[], tryBlock: BlockStatement): void {
     if (!statements.length) return;
     for (const stmt of statements) {
