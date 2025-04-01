@@ -47,5 +47,8 @@
   "publishConfig": {
     "@JairusSW:registry": "https://npm.pkg.github.com"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "json-as": "^1.0.3"
+  }
 }
