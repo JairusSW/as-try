@@ -3,6 +3,7 @@ import { Node, Range } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./visitor.js";
 import { isPrimitive, replaceAfter, replaceRef, stripExpr, toString } from "./util.js";
 import { ExceptionType } from "./types.js";
+const DEBUG = process.env["DEBUG"] ? process.env["DEBUG"] == "true" ? true : false : false;
 class FunctionData {
     node;
     ref;
@@ -56,17 +57,20 @@ class ExceptionLinker extends Visitor {
             let returnStmt = Node.createReturnStatement(null, node.range);
             if (this.fn) {
                 const returnType = toString(this.fn.signature.returnType);
-                console.log("Return Type: " + returnType);
+                if (DEBUG)
+                    console.log("Return Type: " + returnType);
                 if (returnType != "void" && returnType != "never") {
                     returnStmt = Node.createReturnStatement(isPrimitive(returnType)
                         ? returnType == "f32" || returnType == "f64"
                             ? Node.createFloatLiteralExpression(0, node.range)
                             : Node.createIntegerLiteralExpression(i64_zero, node.range)
                         : Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [this.fn.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range);
-                    console.log("Return: " + toString(returnStmt));
+                    if (DEBUG)
+                        console.log("Return: " + toString(returnStmt));
                 }
             }
-            console.log("Return: " + toString(returnStmt));
+            if (DEBUG)
+                console.log("Return: " + toString(returnStmt));
             if (!Array.isArray(ref))
                 replaceRef(node, Node.createBlockStatement([newException, returnStmt], node.range), ref);
             else
@@ -82,23 +86,25 @@ class ExceptionLinker extends Visitor {
                 replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
                 linked.linked = true;
                 this.visit(overrideFn);
-                console.log("Linked Fn: " + toString(overrideFn));
+                if (DEBUG)
+                    console.log("Linked Fn: " + toString(overrideFn));
             }
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(Node.createIdentifierExpression("__try_" + fnName.text, node.expression.range), node.typeArguments, node.args, node.range));
             const remainingStmts = Array.isArray(ref)
                 ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
                 : -1;
-            console.log("Refff: " + toString(ref) + " " + remainingStmts + " " + ref.length);
             if (remainingStmts != -1 && remainingStmts < ref.length) {
                 const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
-                console.log("Error Check:" + toString(errorCheck));
+                if (DEBUG)
+                    console.log("Error Check:" + toString(errorCheck));
                 super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
                 replaceAfter(node, [overrideCall, errorCheck], ref);
             }
             else {
                 replaceRef(node, overrideCall, ref);
             }
-            console.log("Link: " + toString(overrideCall));
+            if (DEBUG)
+                console.log("Link: " + toString(overrideCall));
         }
     }
     visitFunctionDeclaration(node, isDefault, ref) {
@@ -117,13 +123,16 @@ class TryTransform extends Visitor {
     baseStatements = [];
     visitTryStatement(node, ref) {
         this.baseStatements = node.bodyStatements;
-        console.log("Found try: " + toString(node));
+        if (DEBUG)
+            console.log("Found try: " + toString(node));
         this.foundExceptions = [];
         const beforeTry = Node.createExpressionStatement(Node.createBinaryExpression(101, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createFalseExpression(node.range), node.range));
-        const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(this.baseStatements[0].range.start, this.baseStatements[this.baseStatements.length - 1].range.end));
+        const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end || node.range.end));
         ExceptionLinker.replace(tryBlock);
-        console.log("Before Try: " + toString(beforeTry));
-        console.log("Try Block: " + toString(tryBlock));
+        if (DEBUG)
+            console.log("Before Try: " + toString(beforeTry));
+        if (DEBUG)
+            console.log("Try Block: " + toString(tryBlock));
         const catchVar = Node.createVariableStatement(null, [
             Node.createVariableDeclaration(node.catchVariable, null, 16, null, Node.createNewExpression(Node.createSimpleTypeName("Exception", node.range), null, [
                 Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Type", node.range), node.range)
@@ -131,24 +140,24 @@ class TryTransform extends Visitor {
         ], node.range);
         let catchBlock = Node.createIfStatement(Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createBlockStatement([
             ...[
-                Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(node.catchStatements[0].range.start, node.catchStatements[node.catchStatements.length - 1].range.end)),
-                node.finallyStatements.length ? Node.createBlockStatement(node.finallyStatements, new Range(node.finallyStatements[0].range.start, node.finallyStatements[node.finallyStatements.length - 1].range.end)) : null
+                node.catchStatements ? Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(node.catchStatements[0].range.start, node.catchStatements[node.catchStatements.length - 1].range.end)) : null,
+                node.finallyStatements?.length ? Node.createBlockStatement(node.finallyStatements, new Range(node.finallyStatements[0].range.start, node.finallyStatements[node.finallyStatements.length - 1].range.end)) : null
             ].filter((v) => v != null)
         ], node.range), null, node.range);
-        console.log("Catch Block: " + toString(catchBlock));
+        if (DEBUG)
+            console.log("Catch Block: " + toString(catchBlock));
         replaceRef(node, [beforeTry, tryBlock, catchBlock], ref);
     }
     visitCallExpression(node, ref) {
         super.visitCallExpression(node, ref);
     }
     visitSource(node) {
-        if (!node.normalizedPath.includes("test.ts"))
-            return;
         this.currentSource = node;
         FunctionLinker.visit(node);
         super.visitSource(node);
         FunctionLinker.reset();
-        console.log("Source: " + toString(node));
+        if (DEBUG)
+            console.log("Source: " + toString(node));
     }
 }
 export default class Transformer extends Transform {

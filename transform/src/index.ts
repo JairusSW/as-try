@@ -20,6 +20,7 @@ import { CallExpression, FunctionDeclaration, FunctionExpression, ThrowStatement
 import { Exception, ExceptionType } from "./types.js";
 import { RangeTransform } from "./range.js";
 
+const DEBUG = process.env["DEBUG"] ? process.env["DEBUG"] == "true" ? true : false : false;
 
 class FunctionData {
   public node: FunctionDeclaration;
@@ -100,7 +101,7 @@ class ExceptionLinker extends Visitor {
       if (this.fn) {
         // We are inside of a function
         const returnType = toString(this.fn.signature.returnType);
-        console.log("Return Type: " + returnType);
+        if (DEBUG) console.log("Return Type: " + returnType);
         if (returnType != "void" && returnType != "never") {
           returnStmt = Node.createReturnStatement(
             isPrimitive(returnType)
@@ -118,11 +119,11 @@ class ExceptionLinker extends Visitor {
               ),
             node.range
           );
-          console.log("Return: " + toString(returnStmt));
+          if (DEBUG) console.log("Return: " + toString(returnStmt));
         }
       }
 
-      console.log("Return: " + toString(returnStmt));
+      if (DEBUG) console.log("Return: " + toString(returnStmt));
 
       if (!Array.isArray(ref))
         replaceRef(node, Node.createBlockStatement([newException, returnStmt], node.range), ref);
@@ -152,7 +153,7 @@ class ExceptionLinker extends Visitor {
         linked.linked = true;
 
         this.visit(overrideFn);
-        console.log("Linked Fn: " + toString(overrideFn));
+        if (DEBUG) console.log("Linked Fn: " + toString(overrideFn));
       }
 
       const overrideCall = Node.createExpressionStatement(
@@ -170,7 +171,6 @@ class ExceptionLinker extends Visitor {
       const remainingStmts = Array.isArray(ref)
         ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
         : -1;
-      console.log("Refff: " + toString(ref) + " " + remainingStmts + " " + ref.length)
       // @ts-expect-error
       if (remainingStmts != -1 && remainingStmts < ref.length) {
         const errorCheck = Node.createIfStatement(
@@ -196,14 +196,14 @@ class ExceptionLinker extends Visitor {
           null,
           node.range
         );
-        console.log("Error Check:" + toString(errorCheck));
+        if (DEBUG) console.log("Error Check:" + toString(errorCheck));
         super.visitBlockStatement(errorCheck.ifTrue as BlockStatement, errorCheck);
         replaceAfter(node, [overrideCall, errorCheck], ref);
       } else {
         replaceRef(node, overrideCall, ref);
       }
 
-      console.log("Link: " + toString(overrideCall));
+      if (DEBUG) console.log("Link: " + toString(overrideCall));
     }
   }
   visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
@@ -223,7 +223,7 @@ class TryTransform extends Visitor {
   public baseStatements: Node[] = [];
   visitTryStatement(node: TryStatement, ref?: Node | Node[] | null): void {
     this.baseStatements = node.bodyStatements;
-    console.log("Found try: " + toString(node));
+    if (DEBUG) console.log("Found try: " + toString(node));
     this.foundExceptions = [];
 
     const beforeTry = Node.createExpressionStatement(
@@ -246,14 +246,14 @@ class TryTransform extends Visitor {
     );
 
     const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(
-      this.baseStatements[0].range.start,
-      this.baseStatements[this.baseStatements.length - 1].range.end
+      this.baseStatements[0]?.range.start || node.range.start,
+      this.baseStatements[this.baseStatements.length - 1]?.range.end || node.range.end
     ));
     ExceptionLinker.replace(tryBlock);
 
-    console.log("Before Try: " + toString(beforeTry));
+    if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
-    console.log("Try Block: " + toString(tryBlock));
+    if (DEBUG) console.log("Try Block: " + toString(tryBlock));
 
     const catchVar = Node.createVariableStatement(
       null,
@@ -301,11 +301,11 @@ class TryTransform extends Visitor {
       ),
       Node.createBlockStatement([
         ...[
-          Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(
+          node.catchStatements? Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(
             node.catchStatements[0].range.start,
             node.catchStatements[node.catchStatements.length - 1].range.end
-          )),
-          node.finallyStatements.length ? Node.createBlockStatement(node.finallyStatements, new Range(
+          )) : null,
+          node.finallyStatements?.length ? Node.createBlockStatement(node.finallyStatements, new Range(
             node.finallyStatements[0].range.start,
             node.finallyStatements[node.finallyStatements.length - 1].range.end
           )) : null
@@ -315,7 +315,7 @@ class TryTransform extends Visitor {
       node.range
     );
 
-    console.log("Catch Block: " + toString(catchBlock));
+    if (DEBUG) console.log("Catch Block: " + toString(catchBlock));
     replaceRef(node, [beforeTry, tryBlock, catchBlock], ref);
   }
   visitCallExpression(node: CallExpression, ref?: Node | null): void {
@@ -334,12 +334,11 @@ class TryTransform extends Visitor {
     // }
   }
   visitSource(node: Source): void {
-    if (!node.normalizedPath.includes("test.ts")) return;
     this.currentSource = node;
     FunctionLinker.visit(node);
     super.visitSource(node);
     FunctionLinker.reset();
-    console.log("Source: " + toString(node));
+    if (DEBUG) console.log("Source: " + toString(node));
   }
 }
 
