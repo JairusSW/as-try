@@ -1,6 +1,10 @@
 import { Node, NodeKind } from "assemblyscript/dist/assemblyscript.js";
 
-export function replaceRef(node: Node, replacement: Node | Node[], ref: Node | Node[] | null): void {
+export function replaceRef(
+  node: Node,
+  replacement: Node | Node[],
+  ref: Node | Node[] | null,
+): void {
   if (!node || !ref) return;
   const nodeExpr = stripExpr(node);
 
@@ -12,13 +16,14 @@ export function replaceRef(node: Node, replacement: Node | Node[], ref: Node | N
         return; // Exit early after replacement
       }
     }
-  } else if (typeof ref === 'object') {
+  } else if (typeof ref === "object") {
     for (const key of Object.keys(ref)) {
       const current = ref[key] as Node | Node[];
       if (Array.isArray(current)) {
         for (let i = 0; i < current.length; i++) {
           if (stripExpr(current[i]) === nodeExpr) {
-            if (Array.isArray(replacement)) current.splice(i, 1, ...replacement);
+            if (Array.isArray(replacement))
+              current.splice(i, 1, ...replacement);
             else current[i] = replacement;
             return;
           }
@@ -31,7 +36,11 @@ export function replaceRef(node: Node, replacement: Node | Node[], ref: Node | N
   }
 }
 
-export function replaceAfter(node: Node, replacement: Node | Node[], ref: Node | Node[] | null): void {
+export function replaceAfter(
+  node: Node,
+  replacement: Node | Node[],
+  ref: Node | Node[] | null,
+): void {
   if (!node || !ref) return;
   const nodeExpr = stripExpr(node);
 
@@ -39,18 +48,26 @@ export function replaceAfter(node: Node, replacement: Node | Node[], ref: Node |
     let found = false;
     for (let i = 0; i < ref.length; i++) {
       if (found || stripExpr(ref[i]) === nodeExpr) {
-        ref.splice(i, ref.length - i, ...(Array.isArray(replacement) ? replacement : [replacement]));
+        ref.splice(
+          i,
+          ref.length - i,
+          ...(Array.isArray(replacement) ? replacement : [replacement]),
+        );
         return;
       }
     }
-  } else if (typeof ref === 'object') {
+  } else if (typeof ref === "object") {
     for (const key of Object.keys(ref)) {
       const current = ref[key] as Node | Node[];
       if (Array.isArray(current)) {
         let found = false;
         for (let i = 0; i < current.length; i++) {
           if (found || stripExpr(current[i]) === nodeExpr) {
-            current.splice(i, current.length - i, ...(Array.isArray(replacement) ? replacement : [replacement]));
+            current.splice(
+              i,
+              current.length - i,
+              ...(Array.isArray(replacement) ? replacement : [replacement]),
+            );
             return;
           }
         }
@@ -62,7 +79,6 @@ export function replaceAfter(node: Node, replacement: Node | Node[], ref: Node |
   }
 }
 
-
 export function stripExpr(node: Node): Node {
   if (!node) return node;
   if (node.kind == NodeKind.Expression) return node["expression"];
@@ -73,7 +89,13 @@ export function nodeEq(a: Node, b: Node): boolean {
   if (!a || !b) return false;
   if (!a["kind"] || !b["kind"]) return false;
   if (a === b) return true;
-  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+  if (
+    typeof a !== "object" ||
+    a === null ||
+    typeof b !== "object" ||
+    b === null
+  )
+    return false;
 
   const keys1 = Object.keys(a);
   const keys2 = Object.keys(b);
@@ -89,6 +111,19 @@ export function nodeEq(a: Node, b: Node): boolean {
 }
 
 export function isPrimitive(type: string): boolean {
-  const primitiveTypes = ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "bool", "boolean"];
+  const primitiveTypes = [
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "f32",
+    "f64",
+    "bool",
+    "boolean",
+  ];
   return primitiveTypes.some((v) => type.startsWith(v));
 }

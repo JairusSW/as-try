@@ -20,14 +20,13 @@ import { ExceptionState, Exception } from "./types/exception";
 // }
 export function example(): void {
   do {
-    console.log("Hey")
+    console.log("Hey");
     if (true) break;
-    console.log("skipped")
-  } while (0)
+    console.log("skipped");
+  } while (0);
 
-  console.log('LOL')
+  console.log("LOL");
 }
-
 
 function doSomething(shouldAbort: boolean = false): string {
   doSomethingElse(shouldAbort);
@@ -47,8 +46,8 @@ function doSomethingElse(shouldAbort: boolean = false): void {
 // 2nd Level Abort
 ExceptionState.Failed = false;
 {
-  const foo = doSomething((false));
-  if (!ExceptionState.Failed){ 
+  const foo = doSomething(false);
+  if (!ExceptionState.Failed) {
     console.log(foo);
   }
 }

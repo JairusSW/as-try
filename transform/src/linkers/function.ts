@@ -1,4 +1,10 @@
-import { Node, FunctionDeclaration, CallExpression, IdentifierExpression, Source } from "assemblyscript/dist/assemblyscript.js";
+import {
+  Node,
+  FunctionDeclaration,
+  CallExpression,
+  IdentifierExpression,
+  Source,
+} from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "../lib/visitor.js";
 
 export class FunctionData {
@@ -15,8 +21,12 @@ export class FunctionLinker extends Visitor {
   static SN: FunctionLinker = new FunctionLinker();
   public fns: FunctionData[] = [];
   public foundException: boolean = false;
-  visitFunctionDeclaration(node: FunctionDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
-    this.foundException = false
+  visitFunctionDeclaration(
+    node: FunctionDeclaration,
+    isDefault?: boolean,
+    ref?: Node | Node[] | null,
+  ): void {
+    this.foundException = false;
     super.visitFunctionDeclaration(node, isDefault, ref);
     if (!this.foundException) return;
     this.fns.push(new FunctionData(node, ref));
@@ -33,7 +43,9 @@ export class FunctionLinker extends Visitor {
     return FunctionLinker.SN.fns.find((v) => v.node.name.text == fnName);
   }
   static rmFunction(fnName: string): void {
-    const index = FunctionLinker.SN.fns.findIndex(fn => fn.node.name.text === fnName);
+    const index = FunctionLinker.SN.fns.findIndex(
+      (fn) => fn.node.name.text === fnName,
+    );
     if (index == -1) return;
 
     FunctionLinker.SN.fns.splice(index, 1);

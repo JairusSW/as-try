@@ -5,7 +5,7 @@ export enum ExceptionType {
   None,
   Abort,
   Error,
-  Unreachable
+  Unreachable,
 }
 
 export namespace ExceptionState {
@@ -35,7 +35,8 @@ export class Exception {
       out = "abort";
       if (AbortState.msg) out += ": " + AbortState.msg!;
       if (AbortState.fileName) out += " in " + AbortState.fileName!;
-      if (AbortState.lineNumber) out += ` in (${AbortState.lineNumber}:${AbortState.columnNumber})`;
+      if (AbortState.lineNumber)
+        out += ` in (${AbortState.lineNumber}:${AbortState.columnNumber})`;
     } else if (this.type == ExceptionType.Error) {
       out = "Error: " + ErrorState.message;
     }

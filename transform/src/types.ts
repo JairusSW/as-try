@@ -3,7 +3,7 @@ import { Node } from "assemblyscript/dist/assemblyscript.js";
 export enum ExceptionType {
   Throw,
   Abort,
-  Unreachable
+  Unreachable,
 }
 
 export class Exception {
@@ -11,7 +11,12 @@ export class Exception {
   public node: Node;
   public base: Node;
   public children: Exception[];
-  constructor(type: ExceptionType, node: Node, base: Node, children: Exception[] = []) {
+  constructor(
+    type: ExceptionType,
+    node: Node,
+    base: Node,
+    children: Exception[] = [],
+  ) {
     this.type = type;
     this.node = node;
     this.base = base;

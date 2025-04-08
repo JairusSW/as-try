@@ -10,6 +10,7 @@
 </h5>
 
 ## To-do
+
 - [ ] Handle all (`abort/throw/unreachable`) exceptions
 - [ ] Handle exceptions within functions or blocks
 - [ ] Handle nested (multiple) exceptions
@@ -43,7 +44,7 @@ Alternatively, add it to your `asconfig.json`
 ```json
 {
   // ...
-  "options": {"transform": ["as-try/transform"]}
+  "options": { "transform": ["as-try/transform"] }
 }
 ```
 
@@ -52,6 +53,7 @@ If you'd like to see the code that the transform generates, run the build step w
 ## 🪄 Usage
 
 This library does all the work behind-the-scenes, so you, the developer, can use the classic `try/catch/finalize` syntax with no changes!
+
 ```js
 try {
   // Do something
