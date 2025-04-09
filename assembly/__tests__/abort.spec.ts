@@ -105,7 +105,6 @@ describe("Should catch abort in nested try block", () => {
       expect(e.toString()).toBe("Abort inside nested try");
     }
   } catch (e) {
-    // This block should not be reached
     expect("Final Catch").toBe("This should not execute");
   }
 });

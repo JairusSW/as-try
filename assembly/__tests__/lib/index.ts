@@ -13,9 +13,9 @@ class Expectation {
     this.left = left;
   }
   toBe(right: string): void {
+    console.log("  (expected) -> " + right);
+    console.log("  (received) -> " + this.left);
     if (this.left != right) {
-      console.log("  (expected) -> " + right);
-      console.log("  (received) -> " + this.left);
       process.exit(1);
     }
   }

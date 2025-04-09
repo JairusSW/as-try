@@ -96,6 +96,7 @@ export class Visitor {
     }
   }
   _visit(node: Node, ref: Node | Node[] | null): void {
+    if (!node) return;
     switch (node.kind) {
       case NodeKind.Source:
         this.visitSource(node as Source, node);

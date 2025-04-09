@@ -606,6 +606,7 @@ export class ASTBuilder extends Visitor {
   // statements
 
   visitNodeAndTerminate(node: Node): void {
+    if (!node) return;
     this.visitNode(node);
     var sb = this.sb;
     if (

@@ -2,7 +2,9 @@ import {
   CallExpression,
   CommonFlags,
   FunctionDeclaration,
+  IdentifierExpression,
   Node,
+  NodeKind,
   Range,
   Source,
   Token,
@@ -43,19 +45,46 @@ export class TryTransform extends Visitor {
       ),
     );
 
+    const hasBaseException = node.bodyStatements.some((v) => {
+      if (
+        v.kind == NodeKind.Call
+        && (v as CallExpression).expression.kind == NodeKind.Identifier
+        && (
+          ((v as CallExpression).expression as IdentifierExpression).text == "abort"
+          ||
+          ((v as CallExpression).expression as IdentifierExpression).text == "unreachable"
+        )
+      ) return true;
+      if (v.kind == NodeKind.Throw) return true;
+      return false;
+    });
+
+    if (DEBUG) console.log("Has Base Exception: " + hasBaseException)
+
     const tryBlock = Node.createBlockStatement(
       node.bodyStatements,
       new Range(
         this.baseStatements[0]?.range.start || node.range.start,
         this.baseStatements[this.baseStatements.length - 1]?.range.end ||
-          node.range.end,
+        node.range.end,
       ),
     );
-    ExceptionLinker.replace(tryBlock);
+
+    const tryLoop = hasBaseException ? null : Node.createDoStatement(
+      tryBlock,
+      Node.createFalseExpression(node.range),
+      new Range(
+        this.baseStatements[0]?.range.start || node.range.start,
+        this.baseStatements[this.baseStatements.length - 1]?.range.end ||
+        node.range.end,
+      )
+    );
+
+    ExceptionLinker.replace(tryLoop || tryBlock);
 
     if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
-    if (DEBUG) console.log("Try Block: " + toString(tryBlock));
+    if (DEBUG) console.log("Try Block/Loop: " + toString(tryLoop));
 
     const catchVar = Node.createVariableStatement(
       null,
@@ -94,25 +123,25 @@ export class TryTransform extends Visitor {
           ...[
             node.catchStatements
               ? Node.createBlockStatement(
-                  [catchVar, ...node.catchStatements],
-                  new Range(
-                    node.catchStatements[0].range.start,
-                    node.catchStatements[
-                      node.catchStatements.length - 1
-                    ].range.end,
-                  ),
-                )
+                [catchVar, ...node.catchStatements],
+                new Range(
+                  node.catchStatements[0].range.start,
+                  node.catchStatements[
+                    node.catchStatements.length - 1
+                  ].range.end,
+                ),
+              )
               : null,
             node.finallyStatements?.length
               ? Node.createBlockStatement(
-                  node.finallyStatements,
-                  new Range(
-                    node.finallyStatements[0].range.start,
-                    node.finallyStatements[
-                      node.finallyStatements.length - 1
-                    ].range.end,
-                  ),
-                )
+                node.finallyStatements,
+                new Range(
+                  node.finallyStatements[0].range.start,
+                  node.finallyStatements[
+                    node.finallyStatements.length - 1
+                  ].range.end,
+                ),
+              )
               : null,
           ].filter((v) => v != null),
         ],
@@ -123,27 +152,12 @@ export class TryTransform extends Visitor {
     );
 
     if (DEBUG) console.log("Catch Block: " + toString(catchBlock));
-    replaceRef(node, [beforeTry, tryBlock, catchBlock], ref);
-  }
-  visitCallExpression(node: CallExpression, ref?: Node | null): void {
-    super.visitCallExpression(node, ref);
-    // const fnName = node.expression as IdentifierExpression;
-    // if (fnName.text == "abort") {
-    //   this.foundExceptions.push(node);
-    //   return;
-    // }
-
-    // const linkedFn = FunctionLinker.getFunction(fnName.text);
-    // if (linkedFn) {
-    //   console.log("Linked Call: " + toString(FunctionLinker.getFunction(fnName.text)));
-    //   const overrideFn = this.genTryableFn(linkedFn);
-    //   FunctionLinker.replace(linkedFn, ...[linkedFn, overrideFn]);
-    // }
+    replaceRef(node, [beforeTry, tryLoop || tryBlock, catchBlock], ref);
   }
   visitSource(node: Source): void {
     FunctionLinker.visit(node);
     super.visitSource(node);
     FunctionLinker.reset();
-    if (DEBUG) console.log("Source: " + toString(node));
+    // if (DEBUG) console.log("Source: " + toString(node));
   }
 }
