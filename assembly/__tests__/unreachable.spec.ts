@@ -6,7 +6,7 @@ describe("Should handle immediate unreachable call", () => {
   try {
     unreachable();
   } catch (e) {
-    expect(e.toString()).toBe("This should unreachable");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -16,7 +16,7 @@ describe("Should execute finally block", () => {
   try {
     unreachable();
   } catch (e) {
-    expect(e.toString()).toBe("This should unreachable");
+    expect(e.toString()).toBe("unreachable");
   } finally {
     finallyExecuted = true;
   }
@@ -32,7 +32,7 @@ describe("Should catch unreachable inside catch block", () => {
       unreachable();
     }
   } catch (e) {
-    expect(e.toString()).toBe("Unreachable from catch block");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -40,13 +40,13 @@ describe("Should handle multiple unreachable calls", () => {
   try {
     unreachable();
   } catch (e) {
-    expect(e.toString()).toBe("First unreachable");
+    expect(e.toString()).toBe("unreachable");
   }
 
   try {
     unreachable();
   } catch (e) {
-    expect(e.toString()).toBe("Second unreachable");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -55,11 +55,11 @@ describe("Should handle unreachable in nested try/catch blocks", () => {
     try {
       unreachable();
     } catch (e) {
-      expect(e.toString()).toBe("Inner unreachable");
+      expect(e.toString()).toBe("unreachable");
       unreachable();
     }
   } catch (e) {
-    expect(e.toString()).toBe("Outer unreachable");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -68,12 +68,12 @@ describe("Should handle unreachable in finally block", () => {
     try {
       unreachable();
     } catch (e) {
-      expect(e.toString()).toBe("Unreachable in try block");
+      expect(e.toString()).toBe("unreachable");
     } finally {
       unreachable();
     }
   } catch (e) {
-    expect(e.toString()).toBe("Unreachable in finally block");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -85,7 +85,7 @@ describe("Should handle no errors and execute finally block with unreachable", (
       unreachable();
     }
   } catch (e) {
-    expect(e.toString()).toBe("Unreachable in finally");
+    expect(e.toString()).toBe("unreachable");
   }
 });
 
@@ -102,9 +102,9 @@ describe("Should catch unreachable in nested try block", () => {
     try {
       unreachable();
     } catch (e) {
-      expect(e.toString()).toBe("Unreachable inside nested try");
+      expect(e.toString()).toBe("unreachable");
     }
   } catch (e) {
-    expect("Final Catch").toBe("This should not execute");
+    expect("Final Catch").toBe("unreachable");
   }
 });

@@ -62,7 +62,7 @@ export class TryTransform extends Visitor {
     if (DEBUG) console.log("Has Base Exception: " + hasBaseException)
 
     const tryBlock = Node.createBlockStatement(
-      node.bodyStatements,
+      [beforeTry, ...node.bodyStatements],
       new Range(
         this.baseStatements[0]?.range.start || node.range.start,
         this.baseStatements[this.baseStatements.length - 1]?.range.end ||
@@ -70,7 +70,7 @@ export class TryTransform extends Visitor {
       ),
     );
 
-    const tryLoop = hasBaseException ? null : Node.createDoStatement(
+    const tryLoop = hasBaseException ? Node.createDoStatement(
       tryBlock,
       Node.createFalseExpression(node.range),
       new Range(
@@ -78,13 +78,13 @@ export class TryTransform extends Visitor {
         this.baseStatements[this.baseStatements.length - 1]?.range.end ||
         node.range.end,
       )
-    );
+    ) : null;
 
     ExceptionLinker.replace(tryLoop || tryBlock);
 
     if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
-    if (DEBUG) console.log("Try Block/Loop: " + toString(tryLoop));
+    if (DEBUG) console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
 
     const catchVar = Node.createVariableStatement(
       null,
@@ -123,7 +123,7 @@ export class TryTransform extends Visitor {
           ...[
             node.catchStatements
               ? Node.createBlockStatement(
-                [catchVar, ...node.catchStatements],
+                [catchVar, ...node.catchStatements, beforeTry],
                 new Range(
                   node.catchStatements[0].range.start,
                   node.catchStatements[

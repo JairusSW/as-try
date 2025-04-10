@@ -17,33 +17,11 @@ export class ExceptionLinker extends Visitor {
         if (fnName.text == "abort" || fnName.text == "unreachable") {
             const newException = fnName.text == "abort" ?
                 Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range)) : Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("UnreachableState", node.range), Node.createIdentifierExpression("unreachable", node.range), node.range), null, node.args, node.range));
-            let breakStmt = null;
-            if (this.fn) {
-                breakStmt = Node.createReturnStatement(null, node.range);
-                const returnType = toString(this.fn.signature.returnType);
-                if (DEBUG)
-                    console.log("Return Type: " + returnType);
-                if (returnType != "void" && returnType != "never") {
-                    breakStmt = Node.createReturnStatement(isPrimitive(returnType)
-                        ? returnType == "f32" || returnType == "f64"
-                            ? Node.createFloatLiteralExpression(0, node.range)
-                            : Node.createIntegerLiteralExpression(i64_zero, node.range)
-                        : Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [this.fn.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range);
-                }
-                if (DEBUG)
-                    console.log("Return: " + toString(breakStmt));
-            }
-            else if (this.loop) {
-                breakStmt = Node.createBreakStatement(null, node.range);
-                if (DEBUG)
-                    console.log("Break: " + toString(breakStmt));
-            }
-            if (!breakStmt)
-                return;
+            const breakerStmt = this.getBreaker(node);
             if (!Array.isArray(ref))
-                replaceRef(node, Node.createBlockStatement([newException, breakStmt], node.range), ref);
+                replaceRef(node, Node.createBlockStatement([newException, breakerStmt], node.range), ref);
             else
-                replaceRef(node, [newException, breakStmt], ref);
+                replaceRef(node, [newException, breakerStmt], ref);
         }
         else {
             const linked = FunctionLinker.getFunction(fnName.text);
@@ -76,6 +54,14 @@ export class ExceptionLinker extends Visitor {
                 console.log("Link: " + toString(overrideCall));
         }
     }
+    visitThrowStatement(node, ref) {
+        const value = node.value;
+        if (value.kind != 17 || value.typeName.identifier.text != "Error")
+            throw new Error("Exception handling only supports throwing Error classes");
+        const newThrow = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("ErrorState", node.range), Node.createIdentifierExpression("error", node.range), node.range), null, value.args, node.range));
+        const breakerStmt = this.getBreaker(node);
+        replaceRef(node, [newThrow, breakerStmt], ref);
+    }
     visitFunctionDeclaration(node, isDefault, ref) {
         this.fn = node;
         super.visitFunctionDeclaration(node, isDefault, ref);
@@ -100,6 +86,30 @@ export class ExceptionLinker extends Visitor {
         this.visit(node.initializer, node);
         this.visit(node.condition, node);
         this.visit(node.incrementor, node);
+    }
+    getBreaker(node) {
+        let breakStmt = null;
+        if (this.fn) {
+            breakStmt = Node.createReturnStatement(null, node.range);
+            const returnType = toString(this.fn.signature.returnType);
+            if (DEBUG)
+                console.log("Return Type: " + returnType);
+            if (returnType != "void" && returnType != "never") {
+                breakStmt = Node.createReturnStatement(isPrimitive(returnType)
+                    ? returnType == "f32" || returnType == "f64"
+                        ? Node.createFloatLiteralExpression(0, node.range)
+                        : Node.createIntegerLiteralExpression(i64_zero, node.range)
+                    : Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [this.fn.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range);
+            }
+            if (DEBUG)
+                console.log("Return: " + toString(breakStmt));
+        }
+        else if (this.loop) {
+            breakStmt = Node.createBreakStatement(null, node.range);
+            if (DEBUG)
+                console.log("Break: " + toString(breakStmt));
+        }
+        return breakStmt;
     }
     static replace(node) {
         ExceptionLinker.SN.visit(node);

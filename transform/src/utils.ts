@@ -7,7 +7,7 @@ export function replaceRef(
 ): void {
   if (!node || !ref) return;
   const nodeExpr = stripExpr(node);
-
+  
   if (Array.isArray(ref)) {
     for (let i = 0; i < ref.length; i++) {
       if (stripExpr(ref[i]) === nodeExpr) {
@@ -126,4 +126,15 @@ export function isPrimitive(type: string): boolean {
     "boolean",
   ];
   return primitiveTypes.some((v) => type.startsWith(v));
+}
+
+export function blockify(node: Node): Node {
+  let block = node.kind == NodeKind.Block
+    ? node
+    : Node.createBlockStatement(
+      [node],
+      node.range
+    );
+
+  return block;
 }

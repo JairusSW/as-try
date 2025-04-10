@@ -33,15 +33,15 @@ export class TryTransform extends Visitor {
         });
         if (DEBUG)
             console.log("Has Base Exception: " + hasBaseException);
-        const tryBlock = Node.createBlockStatement(node.bodyStatements, new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
+        const tryBlock = Node.createBlockStatement([beforeTry, ...node.bodyStatements], new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
             node.range.end));
-        const tryLoop = hasBaseException ? null : Node.createDoStatement(tryBlock, Node.createFalseExpression(node.range), new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
-            node.range.end));
+        const tryLoop = hasBaseException ? Node.createDoStatement(tryBlock, Node.createFalseExpression(node.range), new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
+            node.range.end)) : null;
         ExceptionLinker.replace(tryLoop || tryBlock);
         if (DEBUG)
             console.log("Before Try: " + toString(beforeTry));
         if (DEBUG)
-            console.log("Try Block/Loop: " + toString(tryLoop));
+            console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
         const catchVar = Node.createVariableStatement(null, [
             Node.createVariableDeclaration(node.catchVariable, null, 16, null, Node.createNewExpression(Node.createSimpleTypeName("Exception", node.range), null, [
                 Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Type", node.range), node.range),
@@ -50,7 +50,7 @@ export class TryTransform extends Visitor {
         let catchBlock = Node.createIfStatement(Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createBlockStatement([
             ...[
                 node.catchStatements
-                    ? Node.createBlockStatement([catchVar, ...node.catchStatements], new Range(node.catchStatements[0].range.start, node.catchStatements[node.catchStatements.length - 1].range.end))
+                    ? Node.createBlockStatement([catchVar, ...node.catchStatements, beforeTry], new Range(node.catchStatements[0].range.start, node.catchStatements[node.catchStatements.length - 1].range.end))
                     : null,
                 node.finallyStatements?.length
                     ? Node.createBlockStatement(node.finallyStatements, new Range(node.finallyStatements[0].range.start, node.finallyStatements[node.finallyStatements.length - 1].range.end))

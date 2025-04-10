@@ -1,3 +1,4 @@
+import { Node } from "assemblyscript/dist/assemblyscript.js";
 export function replaceRef(node, replacement, ref) {
     if (!node || !ref)
         return;
@@ -113,5 +114,11 @@ export function isPrimitive(type) {
         "boolean",
     ];
     return primitiveTypes.some((v) => type.startsWith(v));
+}
+export function blockify(node) {
+    let block = node.kind == 30
+        ? node
+        : Node.createBlockStatement([node], node.range);
+    return block;
 }
 //# sourceMappingURL=utils.js.map

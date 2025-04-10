@@ -50,6 +50,6 @@
   },
   "type": "module",
   "dependencies": {
-    "json-as": "^1.0.3"
+    "json-as": "^1.0.4"
   }
 }

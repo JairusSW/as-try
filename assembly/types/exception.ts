@@ -37,6 +37,8 @@ export class Exception {
       if (AbortState.fileName) out += " in " + AbortState.fileName!;
       if (AbortState.lineNumber)
         out += ` in (${AbortState.lineNumber}:${AbortState.columnNumber})`;
+    } else if (this.type == ExceptionType.Unreachable) {
+      out = "unreachable";
     } else if (this.type == ExceptionType.Error) {
       out = "Error: " + ErrorState.message;
     }
