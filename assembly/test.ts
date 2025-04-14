@@ -13,8 +13,15 @@ import { ErrorState } from "./types/error";
 //   console.log("Gracefully shutting down...");
 //   process.exit(0);
 // }
+
+@json
+class Vec3 {
+  x: i32 = 0;
+  y: i32 = 0;
+  z: i32 = 0;
+}
 try {
-  throw new Error("This is an error");
+  JSON.parse<Vec3>("\"hello\"")
 } catch (e) {
   console.log("Got an error: " + e.toString());
 } finally {

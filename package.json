@@ -17,7 +17,6 @@
   "scripts": {
     "test": "bash ./run-tests.sh",
     "build:test": "rm -rf ./build/ && DEBUG=true asc assembly/test.ts --transform ./transform -o ./build/test.wasm --textFile ./build/test.wat --optimizeLevel 3 --shrinkLevel 0",
-    "build:test:transformed": "rm -rf ./build/ && asc assembly/test.transformed.ts -o ./build/test.wasm --textFile ./build/test.wat --optimizeLevel 3 --shrinkLevel 0",
     "test:wasmtime": "wasmtime ./build/test.wasm",
     "test:wasmer": "wasmer ./build/test.wasm",
     "build:transform": "tsc -p ./transform",

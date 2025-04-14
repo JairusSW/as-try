@@ -21,6 +21,8 @@ export class TryTransform extends Visitor {
         this.foundExceptions = [];
         const beforeTry = Node.createExpressionStatement(Node.createBinaryExpression(101, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createFalseExpression(node.range), node.range));
         const hasBaseException = node.bodyStatements.some((v) => {
+            if (!v)
+                return false;
             if (v.kind == 9
                 && v.expression.kind == 6
                 && (v.expression.text == "abort"
@@ -50,21 +52,20 @@ export class TryTransform extends Visitor {
         let catchBlock = Node.createIfStatement(Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), Node.createBlockStatement([
             ...[
                 node.catchStatements
-                    ? Node.createBlockStatement([catchVar, ...node.catchStatements, beforeTry], new Range(node.catchStatements[0].range.start, node.catchStatements[node.catchStatements.length - 1].range.end))
+                    ? Node.createBlockStatement([catchVar, ...node.catchStatements, beforeTry], new Range(node.catchStatements[0]?.range.start || node.range.start, node.catchStatements[node.catchStatements.length - 1]?.range.end || node.range.end))
                     : null,
                 node.finallyStatements?.length
-                    ? Node.createBlockStatement(node.finallyStatements, new Range(node.finallyStatements[0].range.start, node.finallyStatements[node.finallyStatements.length - 1].range.end))
+                    ? Node.createBlockStatement(node.finallyStatements, new Range(node.finallyStatements[0]?.range.start || node.range.start, node.finallyStatements[node.finallyStatements.length - 1]?.range.end || node.range.end))
                     : null,
             ].filter((v) => v != null),
         ], node.range), null, node.range);
         if (DEBUG)
             console.log("Catch Block: " + toString(catchBlock));
-        replaceRef(node, [beforeTry, tryLoop || tryBlock, catchBlock], ref);
+        replaceRef(node, [tryLoop || tryBlock, catchBlock], ref);
     }
     visitSource(node) {
         FunctionLinker.visit(node);
         super.visitSource(node);
-        FunctionLinker.reset();
     }
 }
 //# sourceMappingURL=transform.js.map

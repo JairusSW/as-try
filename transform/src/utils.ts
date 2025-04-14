@@ -1,4 +1,5 @@
-import { Node, NodeKind } from "assemblyscript/dist/assemblyscript.js";
+import { Node, NodeKind, PropertyAccessExpression } from "assemblyscript/dist/assemblyscript.js";
+import { IdentifierExpression } from "types:assemblyscript/src/ast";
 
 export function replaceRef(
   node: Node,
@@ -7,12 +8,12 @@ export function replaceRef(
 ): void {
   if (!node || !ref) return;
   const nodeExpr = stripExpr(node);
-  
+
   if (Array.isArray(ref)) {
     for (let i = 0; i < ref.length; i++) {
       if (stripExpr(ref[i]) === nodeExpr) {
         if (Array.isArray(replacement)) ref.splice(i, 1, ...replacement);
-        else ref[i] = replacement;
+        else ref.splice(i, 1, replacement);
         return; // Exit early after replacement
       }
     }
@@ -24,7 +25,7 @@ export function replaceRef(
           if (stripExpr(current[i]) === nodeExpr) {
             if (Array.isArray(replacement))
               current.splice(i, 1, ...replacement);
-            else current[i] = replacement;
+            else current.splice(i, 1, replacement);
             return;
           }
         }
@@ -137,4 +138,19 @@ export function blockify(node: Node): Node {
     );
 
   return block;
+}
+
+export function getFnName(expr: Node | string, path: string[] | null = null): string | null {
+  const _path = path ? path.join(".") + "." : "";
+  if (typeof expr == "string") {
+    return _path + expr;
+  } else if (expr.kind === NodeKind.Identifier) {
+    return _path + (expr as IdentifierExpression).text;
+  } else if (expr.kind === NodeKind.PropertyAccess) {
+    const prop = expr as PropertyAccessExpression;
+    const left = getFnName(prop.expression, path);
+    const right = prop.property.text;
+    return (left ? left + "." + right : right);
+  }
+  return null;
 }

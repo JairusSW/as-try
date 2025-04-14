@@ -46,6 +46,7 @@ export class TryTransform extends Visitor {
     );
 
     const hasBaseException = node.bodyStatements.some((v) => {
+      if (!v) return false;
       if (
         v.kind == NodeKind.Call
         && (v as CallExpression).expression.kind == NodeKind.Identifier
@@ -125,10 +126,10 @@ export class TryTransform extends Visitor {
               ? Node.createBlockStatement(
                 [catchVar, ...node.catchStatements, beforeTry],
                 new Range(
-                  node.catchStatements[0].range.start,
+                  node.catchStatements[0]?.range.start || node.range.start,
                   node.catchStatements[
                     node.catchStatements.length - 1
-                  ].range.end,
+                  ]?.range.end || node.range.end,
                 ),
               )
               : null,
@@ -136,10 +137,10 @@ export class TryTransform extends Visitor {
               ? Node.createBlockStatement(
                 node.finallyStatements,
                 new Range(
-                  node.finallyStatements[0].range.start,
+                  node.finallyStatements[0]?.range.start || node.range.start,
                   node.finallyStatements[
                     node.finallyStatements.length - 1
-                  ].range.end,
+                  ]?.range.end || node.range.end,
                 ),
               )
               : null,
@@ -152,12 +153,11 @@ export class TryTransform extends Visitor {
     );
 
     if (DEBUG) console.log("Catch Block: " + toString(catchBlock));
-    replaceRef(node, [beforeTry, tryLoop || tryBlock, catchBlock], ref);
+    replaceRef(node, [tryLoop || tryBlock, catchBlock], ref);
   }
   visitSource(node: Source): void {
     FunctionLinker.visit(node);
     super.visitSource(node);
-    FunctionLinker.reset();
     // if (DEBUG) console.log("Source: " + toString(node));
   }
 }

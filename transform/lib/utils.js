@@ -9,7 +9,7 @@ export function replaceRef(node, replacement, ref) {
                 if (Array.isArray(replacement))
                     ref.splice(i, 1, ...replacement);
                 else
-                    ref[i] = replacement;
+                    ref.splice(i, 1, replacement);
                 return;
             }
         }
@@ -23,7 +23,7 @@ export function replaceRef(node, replacement, ref) {
                         if (Array.isArray(replacement))
                             current.splice(i, 1, ...replacement);
                         else
-                            current[i] = replacement;
+                            current.splice(i, 1, replacement);
                         return;
                     }
                 }
@@ -120,5 +120,21 @@ export function blockify(node) {
         ? node
         : Node.createBlockStatement([node], node.range);
     return block;
+}
+export function getFnName(expr, path = null) {
+    const _path = path ? path.join(".") + "." : "";
+    if (typeof expr == "string") {
+        return _path + expr;
+    }
+    else if (expr.kind === 6) {
+        return _path + expr.text;
+    }
+    else if (expr.kind === 21) {
+        const prop = expr;
+        const left = getFnName(prop.expression, path);
+        const right = prop.property.text;
+        return (left ? left + "." + right : right);
+    }
+    return null;
 }
 //# sourceMappingURL=utils.js.map

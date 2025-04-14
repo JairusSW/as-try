@@ -13,11 +13,12 @@ import {
   ForStatement,
   NodeKind,
   NewExpression,
+  PropertyAccessExpression,
 } from "assemblyscript/dist/assemblyscript.js";
-import { blockify, isPrimitive, replaceAfter, replaceRef, stripExpr } from "../utils.js";
+import { getFnName, isPrimitive, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { toString } from "../lib/util.js";
-import { ThrowStatement, WhileStatement } from "types:assemblyscript/src/ast";
+import { NamespaceDeclaration, ThrowStatement, WhileStatement } from "types:assemblyscript/src/ast";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -31,14 +32,17 @@ export class ExceptionLinker extends Visitor {
   public loop: DoStatement | WhileStatement | ForStatement | null = null;
   public fn: FunctionDeclaration | null = null;
 
+  public path: string[] | null = null;
+
   visitCallExpression(
     node: CallExpression,
     ref: Node | Node[] | null = null,
   ): void {
-    const fnName = node.expression as IdentifierExpression; // Can also be PropertyAccessExpression
+    const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
+    const path = this.path ? this.path.join(".") + "." : "";
 
-    if (fnName.text == "abort" || fnName.text == "unreachable") {
-      const newException = fnName.text == "abort" ?
+    if (fnName == "abort" || fnName == "unreachable") {
+      const newException = fnName == "abort" ?
         Node.createExpressionStatement(
           Node.createCallExpression(
             Node.createPropertyAccessExpression(
@@ -73,7 +77,7 @@ export class ExceptionLinker extends Visitor {
         );
       else replaceRef(node, [newException, breakerStmt], ref);
     } else {
-      const linked = FunctionLinker.getFunction(fnName.text);
+      const linked = FunctionLinker.getFunction(node.expression, this.path);
       if (!linked) return;
       const linkedFn = linked.node;
 
@@ -95,14 +99,14 @@ export class ExceptionLinker extends Visitor {
         replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
         linked.linked = true;
 
-        this.visit(overrideFn);
+        super.visit(overrideFn);
         if (DEBUG) console.log("Linked Fn: " + toString(overrideFn));
       }
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
           Node.createIdentifierExpression(
-            "__try_" + fnName.text,
+            getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null),
             node.expression.range,
           ),
           node.typeArguments,
@@ -145,6 +149,7 @@ export class ExceptionLinker extends Visitor {
 
       if (DEBUG) console.log("Link: " + toString(overrideCall));
     }
+    super.visitCallExpression(node, ref);
   }
   visitThrowStatement(node: ThrowStatement, ref?: Node | Node[] | null): void {
     const value = node.value as NewExpression;
@@ -164,7 +169,13 @@ export class ExceptionLinker extends Visitor {
     );
 
     const breakerStmt = this.getBreaker(node);
-    replaceRef(node, [newThrow, breakerStmt], ref);
+    if (!Array.isArray(ref))
+      replaceRef(
+        node,
+        Node.createBlockStatement([newThrow, breakerStmt], node.range),
+        ref,
+      );
+    else replaceRef(node, [newThrow, breakerStmt], ref);
   }
   visitFunctionDeclaration(
     node: FunctionDeclaration,
@@ -172,8 +183,12 @@ export class ExceptionLinker extends Visitor {
     ref?: Node | Node[] | null,
   ): void {
     this.fn = node;
-    super.visitFunctionDeclaration(node, isDefault, ref);
+    super.visit(node.body, node);
     this.fn = null;
+    super.visit(node.name, node);
+    super.visit(node.decorators, node);
+    super.visit(node.typeParameters, node);
+    super.visit(node.signature, node);
   }
   visitWhileStatement(node: WhileStatement, ref?: Node | Node[] | null): void {
     this.loop = node;
@@ -191,19 +206,17 @@ export class ExceptionLinker extends Visitor {
     this.loop = node;
     super.visit(node.body, node);
     this.loop = null;
-    this.visit(node.initializer, node);
-    this.visit(node.condition, node);
-    this.visit(node.incrementor, node);
+    super.visit(node.initializer, node);
+    super.visit(node.condition, node);
+    super.visit(node.incrementor, node);
   }
   getBreaker(node: Node): ReturnStatement | BreakStatement | null {
-    let breakStmt: ReturnStatement | BreakStatement | null = null;
+    let breakStmt: ReturnStatement | BreakStatement | null = Node.createReturnStatement(
+      null,
+      node.range,
+    );
 
     if (this.fn) {
-      breakStmt = Node.createReturnStatement(
-        null,
-        node.range,
-      );
-
       const returnType = toString(this.fn.signature.returnType);
       if (DEBUG) console.log("Return Type: " + returnType);
       if (returnType != "void" && returnType != "never") {
@@ -228,8 +241,10 @@ export class ExceptionLinker extends Visitor {
         node.range,
       );
       if (DEBUG) console.log("Break: " + toString(breakStmt));
+    } else {
+      if (DEBUG) console.log("Return: " + toString(breakStmt));
+      return breakStmt;
     }
-    return breakStmt;
   }
   static replace(node: Node | Node[]): void {
     ExceptionLinker.SN.visit(node);
