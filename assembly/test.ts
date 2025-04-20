@@ -1,7 +1,7 @@
 import { JSON } from "json-as";
-import { AbortState } from "./types/abort";
-import { ExceptionState, Exception } from "./types/exception";
-import { ErrorState } from "./types/error";
+import { __AbortState } from "./types/abort";
+import { __ExceptionState, __Exception } from "./types/exception";
+import { __ErrorState } from "./types/error";
 
 // 1st Level Abort
 // try {

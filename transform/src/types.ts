@@ -1,21 +1,21 @@
 import { Node } from "assemblyscript/dist/assemblyscript.js";
 
-export enum ExceptionType {
+export enum __ExceptionType {
   Throw,
   Abort,
   Unreachable,
 }
 
-export class Exception {
-  public type: ExceptionType;
+export class __Exception {
+  public type: __ExceptionType;
   public node: Node;
   public base: Node;
-  public children: Exception[];
+  public children: __Exception[];
   constructor(
-    type: ExceptionType,
+    type: __ExceptionType,
     node: Node,
     base: Node,
-    children: Exception[] = [],
+    children: __Exception[] = [],
   ) {
     this.type = type;
     this.node = node;

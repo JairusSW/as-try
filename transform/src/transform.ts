@@ -14,7 +14,7 @@ import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { ExceptionLinker } from "./linkers/exception.js";
+import { __ExceptionLinker } from "./linkers/exception.js";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -36,7 +36,7 @@ export class TryTransform extends Visitor {
       Node.createBinaryExpression(
         Token.Equals,
         Node.createPropertyAccessExpression(
-          Node.createIdentifierExpression("ExceptionState", node.range),
+          Node.createIdentifierExpression("__ExceptionState", node.range),
           Node.createIdentifierExpression("Failed", node.range),
           node.range,
         ),
@@ -81,7 +81,7 @@ export class TryTransform extends Visitor {
       )
     ) : null;
 
-    ExceptionLinker.replace(tryLoop || tryBlock);
+    __ExceptionLinker.replace(tryLoop || tryBlock);
 
     if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
@@ -96,11 +96,11 @@ export class TryTransform extends Visitor {
           CommonFlags.Let,
           null,
           Node.createNewExpression(
-            Node.createSimpleTypeName("Exception", node.range),
+            Node.createSimpleTypeName("__Exception", node.range),
             null,
             [
               Node.createPropertyAccessExpression(
-                Node.createIdentifierExpression("ExceptionState", node.range),
+                Node.createIdentifierExpression("__ExceptionState", node.range),
                 Node.createIdentifierExpression("Type", node.range),
                 node.range,
               ),
@@ -115,7 +115,7 @@ export class TryTransform extends Visitor {
 
     let catchBlock = Node.createIfStatement(
       Node.createPropertyAccessExpression(
-        Node.createIdentifierExpression("ExceptionState", node.range),
+        Node.createIdentifierExpression("__ExceptionState", node.range),
         Node.createIdentifierExpression("Failed", node.range),
         node.range,
       ),

@@ -1,49 +1,58 @@
 import { Visitor } from "../lib/visitor.js";
 import { Node, } from "assemblyscript/dist/assemblyscript.js";
-import { getFnName, isPrimitive, replaceAfter, replaceRef, stripExpr } from "../utils.js";
+import { cloneNode, getFnName, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
-import { toString } from "../lib/util.js";
+import { SimpleParser, toString } from "../lib/util.js";
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
         ? true
         : false
     : false;
-export class ExceptionLinker extends Visitor {
-    static SN = new ExceptionLinker();
-    loop = null;
+export class __ExceptionParent {
+    exception;
+    parent;
+    constructor(exception, parent = null) {
+        this.exception = exception;
+        this.parent = parent;
+    }
+}
+export class __ExceptionLinker extends Visitor {
+    static SN = new __ExceptionLinker();
+    changed = false;
     fn = null;
-    path = null;
+    exceptions = [];
+    addedImports = new Set();
     visitCallExpression(node, ref = null) {
         const fnName = node.expression.kind == 6 ? node.expression.text : node.expression.property.text;
-        const path = this.path ? this.path.join(".") + "." : "";
         if (fnName == "abort" || fnName == "unreachable") {
+            if (fnName == "abort")
+                this.addedImports.add("__AbortState");
+            else
+                this.addedImports.add("__UnreachableState");
             const newException = fnName == "abort" ?
-                Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range)) : Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("UnreachableState", node.range), Node.createIdentifierExpression("unreachable", node.range), node.range), null, node.args, node.range));
-            const breakerStmt = this.getBreaker(node);
+                Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range)) : Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__UnreachableState", node.range), Node.createIdentifierExpression("unreachable", node.range), node.range), null, node.args, node.range));
+            const breakerStmt = this.getBreaker(node, this.fn);
             if (!Array.isArray(ref))
                 replaceRef(node, Node.createBlockStatement([newException, breakerStmt], node.range), ref);
             else
                 replaceRef(node, [newException, breakerStmt], ref);
         }
         else {
-            const linked = FunctionLinker.getFunction(node.expression, this.path);
+            const linked = FunctionLinker.getFunction(node.expression);
             if (!linked)
                 return;
             const linkedFn = linked.node;
-            if (!linked.linked) {
-                const overrideFn = Node.createFunctionDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, linkedFn.name.range), linkedFn.decorators, linkedFn.flags, linkedFn.typeParameters, linkedFn.signature, linkedFn.body, linkedFn.arrowKind, linkedFn.range);
-                replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
-                linked.linked = true;
-                super.visit(overrideFn);
-                if (DEBUG)
-                    console.log("Linked Fn: " + toString(overrideFn));
-            }
-            const overrideCall = Node.createExpressionStatement(Node.createCallExpression(Node.createIdentifierExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null), node.expression.range), node.typeArguments, node.args, node.range));
+            if (linkedFn.name.text != "parse")
+                return;
+            const overrideCall = Node.createExpressionStatement(Node.createCallExpression(linked.path ?
+                SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
+                : Node.createIdentifierExpression(getFnName("__try_" + linkedFn.name.text), node.expression.range), node.typeArguments, node.args, node.range));
             const remainingStmts = Array.isArray(ref)
                 ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
                 : -1;
             if (remainingStmts != -1 && remainingStmts < ref.length) {
-                const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
+                this.addedImports.add("__ExceptionState");
+                const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
                 if (DEBUG)
                     console.log("Error Check:" + toString(errorCheck));
                 super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
@@ -51,6 +60,23 @@ export class ExceptionLinker extends Visitor {
             }
             else {
                 replaceRef(node, overrideCall, ref);
+            }
+            if (!linked.linked) {
+                const linkedBody = linkedFn.body;
+                const overrideFn = Node.createFunctionDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, linkedFn.name.range), linkedFn.decorators, linkedFn.flags, linkedFn.typeParameters, linkedFn.signature, cloneNode(linkedBody), linkedFn.arrowKind, linkedFn.range);
+                linked.linked = true;
+                console.log("Set Fn " + overrideFn.name.text);
+                const lastFn = this.fn;
+                this.fn = overrideFn;
+                this.fn = lastFn;
+                console.log("Release Fn " + overrideFn.name.text);
+                if (DEBUG)
+                    console.log("Linked Fn: " + toString(overrideFn));
+                console.log(toString(this.currentSource));
+                console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
+                super.visit(overrideFn, ref);
+                replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
+                console.log(toString(linkedFn.range.source));
             }
             if (DEBUG)
                 console.log("Link: " + toString(overrideCall));
@@ -60,76 +86,49 @@ export class ExceptionLinker extends Visitor {
     visitThrowStatement(node, ref) {
         const value = node.value;
         if (value.kind != 17 || value.typeName.identifier.text != "Error")
-            throw new Error("Exception handling only supports throwing Error classes");
-        const newThrow = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("ErrorState", node.range), Node.createIdentifierExpression("error", node.range), node.range), null, value.args, node.range));
-        const breakerStmt = this.getBreaker(node);
+            throw new Error("__Exception handling only supports throwing Error classes");
+        this.addedImports.add("__ErrorState");
+        const newThrow = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ErrorState", node.range), Node.createIdentifierExpression("error", node.range), node.range), null, value.args, node.range));
+        console.log("Fn (Throw): " + toString(this.fn));
+        const breaker = this.getBreaker(node, this.fn);
+        console.log("Breaker (Throw): " + toString(breaker));
         if (!Array.isArray(ref))
-            replaceRef(node, Node.createBlockStatement([newThrow, breakerStmt], node.range), ref);
+            replaceRef(node, Node.createBlockStatement([newThrow, breaker], node.range), ref);
         else
-            replaceRef(node, [newThrow, breakerStmt], ref);
+            replaceRef(node, [newThrow, breaker], ref);
     }
     visitFunctionDeclaration(node, isDefault, ref) {
+        console.log("Set Fn " + node.name.text);
+        const lastFn = this.fn;
         this.fn = node;
         super.visit(node.body, node);
-        this.fn = null;
+        console.log("Release Fn " + node.name.text);
+        this.fn = lastFn;
         super.visit(node.name, node);
         super.visit(node.decorators, node);
         super.visit(node.typeParameters, node);
         super.visit(node.signature, node);
     }
-    visitWhileStatement(node, ref) {
-        this.loop = node;
-        super.visit(node.body, node);
-        this.loop = null;
-        super.visit(node.condition, node);
-    }
-    visitDoStatement(node, ref) {
-        this.loop = node;
-        super.visit(node.body, node);
-        this.loop = null;
-        super.visit(node.condition, node);
-    }
-    visitForStatement(node, ref) {
-        this.loop = node;
-        super.visit(node.body, node);
-        this.loop = null;
-        super.visit(node.initializer, node);
-        super.visit(node.condition, node);
-        super.visit(node.incrementor, node);
-    }
-    getBreaker(node) {
+    getBreaker(node, parent = null) {
         let breakStmt = Node.createReturnStatement(null, node.range);
-        if (this.fn) {
-            const returnType = toString(this.fn.signature.returnType);
+        if (parent) {
+            const returnType = toString(parent.signature.returnType);
             if (DEBUG)
-                console.log("Return Type: " + returnType);
+                console.log("Return Type: " + returnType + " derived from " + parent.name.text);
             if (returnType != "void" && returnType != "never") {
-                breakStmt = Node.createReturnStatement(isPrimitive(returnType)
-                    ? returnType == "f32" || returnType == "f64"
-                        ? Node.createFloatLiteralExpression(0, node.range)
-                        : Node.createIntegerLiteralExpression(i64_zero, node.range)
-                    : Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [this.fn.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range);
+                breakStmt = Node.createIfStatement(Node.createCallExpression(Node.createIdentifierExpression("isBoolean", node.range), [parent.signature.returnType], [], node.range), Node.createReturnStatement(Node.createFalseExpression(node.range), node.range), Node.createIfStatement(Node.createCallExpression(Node.createIdentifierExpression("isInteger", node.range), [parent.signature.returnType], [], node.range), Node.createReturnStatement(Node.createIntegerLiteralExpression(i64_zero, node.range), node.range), Node.createIfStatement(Node.createCallExpression(Node.createIdentifierExpression("isFloat", node.range), [parent.signature.returnType], [], node.range), Node.createFloatLiteralExpression(0, node.range), Node.createIfStatement(Node.createBinaryExpression(98, Node.createCallExpression(Node.createIdentifierExpression("isManaged", node.range), [parent.signature.returnType], [], node.range), Node.createCallExpression(Node.createIdentifierExpression("isUnmanaged", node.range), [parent.signature.returnType], [], node.range), node.range), Node.createReturnStatement(Node.createCallExpression(Node.createIdentifierExpression("changetype", node.range), [parent.signature.returnType], [Node.createIntegerLiteralExpression(i64_zero, node.range)], node.range), node.range), Node.createReturnStatement(null, node.range), node.range), node.range), node.range), node.range);
             }
-            if (DEBUG)
-                console.log("Return: " + toString(breakStmt));
+            else {
+                breakStmt = Node.createReturnStatement(null, node.range);
+            }
         }
-        else if (this.loop) {
-            breakStmt = Node.createBreakStatement(null, node.range);
-            if (DEBUG)
-                console.log("Break: " + toString(breakStmt));
-        }
-        else {
-            if (DEBUG)
-                console.log("Return: " + toString(breakStmt));
-            return breakStmt;
-        }
+        if (DEBUG)
+            console.log("Return: " + toString(breakStmt));
+        return breakStmt;
     }
     static replace(node) {
-        ExceptionLinker.SN.fn = null;
-        ExceptionLinker.SN.loop = null;
-        ExceptionLinker.SN.path = null;
-        const source = Array.isArray(node) ? node[0].range.source : node.range.source;
-        ExceptionLinker.SN.visit(node);
+        __ExceptionLinker.SN.fn = null;
+        __ExceptionLinker.SN.visit(node);
     }
 }
 //# sourceMappingURL=exception.js.map

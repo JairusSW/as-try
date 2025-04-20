@@ -1,10 +1,10 @@
-import { AbortState } from "./types/abort";
+import { __AbortState } from "./types/abort";
 import { ExceptionState, Exception } from "./types/exception";
 
 // 1st Level Abort
 // ExceptionState.Failed = false;
 // {
-//   AbortState.abort("Failed to execute!", "test.ts");
+//   __AbortState.abort("Failed to execute!", "test.ts");
 //   if (!ExceptionState.Failed) {
 //     console.log("This should not execute");
 //   }
@@ -36,7 +36,7 @@ function doSomething(shouldAbort: boolean = false): string {
 
 function doSomethingElse(shouldAbort: boolean = false): void {
   if (shouldAbort) {
-    AbortState.abort("Function 'doSomething' failed to execute properly!");
+    __AbortState.abort("Function 'doSomething' failed to execute properly!");
     // Since it's void, I can return here or jump to the branch
     return;
   }

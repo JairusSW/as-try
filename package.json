@@ -49,6 +49,8 @@
   },
   "type": "module",
   "dependencies": {
+    "@types/clone-deep": "^4.0.4",
+    "clone-deep": "^4.0.1",
     "json-as": "^1.0.4"
   }
 }

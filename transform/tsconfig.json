@@ -6,7 +6,8 @@
     "removeComments": true,
     "types": ["node"],
     "outDir": "./lib",
-    "sourceMap": true
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["./src/*.ts", "src/linkers/function.ts", "src/lib/linker.ts"]
 }

@@ -1,6 +1,6 @@
 import { JSON } from "json-as";
-import { AbortState } from "../types/abort";
-import { ExceptionState, Exception } from "../types/exception";
+import { __AbortState } from "../types/abort";
+import { __ExceptionState, __Exception } from "../types/exception";
 import { describe, expect } from "./lib";
 
 @json
@@ -10,11 +10,11 @@ class Vec3 {
   z: i32 = 0;
 }
 // describe("Should handle immediate abort call", () => {
-  try {
-    JSON.parse<Vec3>("\"hello\"")
-  } catch (e) {
-    expect(e.toString()).toBe("abort: This should abort");
-  }
+try {
+  JSON.parse<Vec3>("\"hello\"")
+} catch (e) {
+  expect(e.toString()).toBe("abort: This should abort");
+}
 // });
 
 // describe("Should execute finally block", () => {

@@ -1,13 +1,13 @@
-import { ExceptionState, ExceptionType } from "./exception";
+import { __ExceptionState, __ExceptionType } from "./exception";
 
-export namespace UnreachableState {
+export namespace __UnreachableState {
   // @ts-ignore: inline
   @inline export function reset(): void {
-    ExceptionState.Failed = false;
+    __ExceptionState.Failed = false;
   }
   // @ts-ignore: inline
   export function unreachable(): void {
-    ExceptionState.Failed = true;
-    ExceptionState.Type = ExceptionType.Unreachable;
+    __ExceptionState.Failed = true;
+    __ExceptionState.Type = __ExceptionType.Unreachable;
   }
 }

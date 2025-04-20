@@ -154,3 +154,32 @@ export function getFnName(expr: Node | string, path: string[] | null = null): st
   }
   return null;
 }
+
+export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), path = ''): Node | Node[] | null {
+  if (input === null || typeof input !== 'object') return input;
+
+  if (Array.isArray(input)) {
+    return input.map((item, index) => cloneNode(item, seen, `${path}[${index}]`)) as Node | Node[] | null;
+  }
+
+  if (seen.has(input)) return seen.get(input);
+
+  const prototype = Object.getPrototypeOf(input);
+  const clone = Array.isArray(input) ? [] : Object.create(prototype);
+  seen.set(input, clone);
+
+  for (const key of Reflect.ownKeys(input)) {
+    const value = input[key];
+    const newPath = path ? `${path}.${String(key)}` : String(key);
+
+    if (newPath.endsWith('range.source')) {
+      clone[key] = value;
+    } else if (value && typeof value === 'object') {
+      clone[key] = cloneNode(value, seen, newPath);
+    } else {
+      clone[key] = value;
+    }
+  }
+
+  return clone as Node | Node[] | null;
+}

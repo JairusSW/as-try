@@ -1,46 +1,46 @@
-import { AbortState } from "./abort";
-import { ErrorState } from "./error";
+import { __AbortState } from "./abort";
+import { __ErrorState } from "./error";
 
-export enum ExceptionType {
+export enum __ExceptionType {
   None,
   Abort,
   Error,
   Unreachable,
 }
 
-export namespace ExceptionState {
+export namespace __ExceptionState {
   export let Failed: boolean = false;
-  export let Type: ExceptionType = ExceptionType.None;
+  export let Type: __ExceptionType = __ExceptionType.None;
 }
 
-export class Exception {
-  public type: ExceptionType;
+export class __Exception {
+  public type: __ExceptionType;
   // Abort
-  public msg: string | null = AbortState.msg;
-  public fileName: string | null = AbortState.fileName;
-  public lineNumber: i32 = AbortState.lineNumber;
-  public columnNumber: i32 = AbortState.columnNumber;
+  public msg: string | null = __AbortState.msg;
+  public fileName: string | null = __AbortState.fileName;
+  public lineNumber: i32 = __AbortState.lineNumber;
+  public columnNumber: i32 = __AbortState.columnNumber;
 
   // Error
-  public message: string = ErrorState.message;
-  public name: string = ErrorState.name;
-  public stack: string | null = ErrorState.stack;
+  public message: string = __ErrorState.message;
+  public name: string = __ErrorState.name;
+  public stack: string | null = __ErrorState.stack;
 
-  constructor(type: ExceptionType) {
+  constructor(type: __ExceptionType) {
     this.type = type;
   }
   toString(): string {
     let out = "";
-    if (this.type == ExceptionType.Abort) {
+    if (this.type == __ExceptionType.Abort) {
       out = "abort";
-      if (AbortState.msg) out += ": " + AbortState.msg!;
-      if (AbortState.fileName) out += " in " + AbortState.fileName!;
-      if (AbortState.lineNumber)
-        out += ` in (${AbortState.lineNumber}:${AbortState.columnNumber})`;
-    } else if (this.type == ExceptionType.Unreachable) {
+      if (__AbortState.msg) out += ": " + __AbortState.msg!;
+      if (__AbortState.fileName) out += " in " + __AbortState.fileName!;
+      if (__AbortState.lineNumber)
+        out += ` in (${__AbortState.lineNumber}:${__AbortState.columnNumber})`;
+    } else if (this.type == __ExceptionType.Unreachable) {
       out = "unreachable";
-    } else if (this.type == ExceptionType.Error) {
-      out = "Error: " + ErrorState.message;
+    } else if (this.type == __ExceptionType.Error) {
+      out = "Error: " + __ErrorState.message;
     }
     return out;
   }

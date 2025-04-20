@@ -1,10 +1,10 @@
-export var ExceptionType;
-(function (ExceptionType) {
-    ExceptionType[ExceptionType["Throw"] = 0] = "Throw";
-    ExceptionType[ExceptionType["Abort"] = 1] = "Abort";
-    ExceptionType[ExceptionType["Unreachable"] = 2] = "Unreachable";
-})(ExceptionType || (ExceptionType = {}));
-export class Exception {
+export var __ExceptionType;
+(function (__ExceptionType) {
+    __ExceptionType[__ExceptionType["Throw"] = 0] = "Throw";
+    __ExceptionType[__ExceptionType["Abort"] = 1] = "Abort";
+    __ExceptionType[__ExceptionType["Unreachable"] = 2] = "Unreachable";
+})(__ExceptionType || (__ExceptionType = {}));
+export class __Exception {
     type;
     node;
     base;
