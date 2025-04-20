@@ -3,7 +3,7 @@ import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { __ExceptionLinker } from "./linkers/exception.js";
+import { ExceptionLinker } from "./linkers/exception.js";
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
         ? true
@@ -39,11 +39,13 @@ export class TryTransform extends Visitor {
             node.range.end));
         const tryLoop = hasBaseException ? Node.createDoStatement(tryBlock, Node.createFalseExpression(node.range), new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
             node.range.end)) : null;
-        __ExceptionLinker.replace(tryLoop || tryBlock);
+        ExceptionLinker.replace(tryLoop || tryBlock);
         if (DEBUG)
             console.log("Before Try: " + toString(beforeTry));
         if (DEBUG)
             console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
+        if (node.catchStatements.length)
+            ExceptionLinker.SN.addImport(new Set(["__ExceptionState", "__Exception"]), node.range.source);
         const catchVar = Node.createVariableStatement(null, [
             Node.createVariableDeclaration(node.catchVariable, null, 16, null, Node.createNewExpression(Node.createSimpleTypeName("__Exception", node.range), null, [
                 Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Type", node.range), node.range),

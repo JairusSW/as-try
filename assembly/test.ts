@@ -1,8 +1,4 @@
 import { JSON } from "json-as";
-import { __AbortState } from "./types/abort";
-import { __ExceptionState, __Exception } from "./types/exception";
-import { __ErrorState } from "./types/error";
-
 // 1st Level Abort
 // try {
 //   abort("Failed to execute!", "test.ts");
@@ -13,7 +9,7 @@ import { __ErrorState } from "./types/error";
 //   console.log("Gracefully shutting down...");
 //   process.exit(0);
 // }
-
+import { __Exception } from "./types/exception";
 @json
 class Vec3 {
   x: i32 = 0;

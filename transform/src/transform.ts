@@ -14,7 +14,7 @@ import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { __ExceptionLinker } from "./linkers/exception.js";
+import { ExceptionLinker } from "./linkers/exception.js";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -81,11 +81,14 @@ export class TryTransform extends Visitor {
       )
     ) : null;
 
-    __ExceptionLinker.replace(tryLoop || tryBlock);
+    ExceptionLinker.replace(tryLoop || tryBlock);
 
     if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
     if (DEBUG) console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
+
+    if (node.catchStatements.length)
+      ExceptionLinker.SN.addImport(new Set<string>(["__ExceptionState", "__Exception"]), node.range.source);
 
     const catchVar = Node.createVariableStatement(
       null,

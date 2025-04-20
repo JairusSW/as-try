@@ -3,12 +3,14 @@ import { Node, } from "assemblyscript/dist/assemblyscript.js";
 import { cloneNode, getFnName, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
         ? true
         : false
     : false;
-export class __ExceptionParent {
+export class ExceptionParent {
     exception;
     parent;
     constructor(exception, parent = null) {
@@ -16,19 +18,18 @@ export class __ExceptionParent {
         this.parent = parent;
     }
 }
-export class __ExceptionLinker extends Visitor {
-    static SN = new __ExceptionLinker();
+export class ExceptionLinker extends Visitor {
+    static SN = new ExceptionLinker();
     changed = false;
     fn = null;
     exceptions = [];
-    addedImports = new Set();
     visitCallExpression(node, ref = null) {
         const fnName = node.expression.kind == 6 ? node.expression.text : node.expression.property.text;
         if (fnName == "abort" || fnName == "unreachable") {
             if (fnName == "abort")
-                this.addedImports.add("__AbortState");
+                this.addImport(new Set(["__AbortState"]), node.range.source);
             else
-                this.addedImports.add("__UnreachableState");
+                this.addImport(new Set(["__UnreachableState"]), node.range.source);
             const newException = fnName == "abort" ?
                 Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range)) : Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__UnreachableState", node.range), Node.createIdentifierExpression("unreachable", node.range), node.range), null, node.args, node.range));
             const breakerStmt = this.getBreaker(node, this.fn);
@@ -51,7 +52,7 @@ export class __ExceptionLinker extends Visitor {
                 ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
                 : -1;
             if (remainingStmts != -1 && remainingStmts < ref.length) {
-                this.addedImports.add("__ExceptionState");
+                this.addImport(new Set(["__ExceptionState"]), node.range.source);
                 const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
                 if (DEBUG)
                     console.log("Error Check:" + toString(errorCheck));
@@ -87,7 +88,7 @@ export class __ExceptionLinker extends Visitor {
         const value = node.value;
         if (value.kind != 17 || value.typeName.identifier.text != "Error")
             throw new Error("__Exception handling only supports throwing Error classes");
-        this.addedImports.add("__ErrorState");
+        this.addImport(new Set(["__ErrorState"]), node.range.source);
         const newThrow = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ErrorState", node.range), Node.createIdentifierExpression("error", node.range), node.range), null, value.args, node.range));
         console.log("Fn (Throw): " + toString(this.fn));
         const breaker = this.getBreaker(node, this.fn);
@@ -126,9 +127,84 @@ export class __ExceptionLinker extends Visitor {
             console.log("Return: " + toString(breakStmt));
         return breakStmt;
     }
-    static replace(node) {
-        __ExceptionLinker.SN.fn = null;
-        __ExceptionLinker.SN.visit(node);
+    addImport(imports, source) {
+        const sourcePath = path.resolve(process.cwd(), source.normalizedPath);
+        while (imports.size) {
+            let names = [];
+            let path = "";
+            if (imports.has("__AbortState")) {
+                names = ["__AbortState"];
+                path = calcPath(sourcePath, "abort");
+                imports.delete("__AbortState");
+            }
+            else if (imports.has("__ExceptionState") && imports.has("__Exception")) {
+                names = ["__ExceptionState", "__Exception"];
+                path = calcPath(sourcePath, "exception");
+                imports.delete("__ExceptionState");
+                imports.delete("__Exception");
+            }
+            else if (imports.has("__ExceptionState")) {
+                names = ["__ExceptionState"];
+                path = calcPath(sourcePath, "exception");
+                imports.delete("__ExceptionState");
+            }
+            else if (imports.has("__Exception")) {
+                names = ["__Exception"];
+                path = calcPath(sourcePath, "exception");
+                imports.delete("__Exception");
+            }
+            else if (imports.has("__ErrorState")) {
+                names = ["__ErrorState"];
+                path = calcPath(sourcePath, "error");
+                imports.delete("__ErrorState");
+            }
+            else if (imports.has("__UnreachableState")) {
+                names = ["__UnreachableState"];
+                path = calcPath(sourcePath, "unreachable");
+                imports.delete("__UnreachableState");
+            }
+            else {
+                return;
+            }
+            if (hasSameImport(names, path, source))
+                continue;
+            const importStatement = Node.createImportStatement(names.map(v => Node.createImportDeclaration(Node.createIdentifierExpression(v, source.range), null, source.range)), Node.createStringLiteralExpression(path, source.range), source.range);
+            source.statements.unshift(importStatement);
+            if (DEBUG) {
+                console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
+            }
+        }
     }
+    static replace(node) {
+        ExceptionLinker.SN.fn = null;
+        ExceptionLinker.SN.visit(node);
+    }
+}
+function calcPath(from, toName) {
+    const thisFile = fileURLToPath(import.meta.url);
+    const baseDir = path.resolve(thisFile, "..", "..", "..", "..");
+    let relPath = path.posix.join(...(path.relative(path.dirname(from), path.join(baseDir, "assembly", "types", toName)).split(path.sep))).replace(/^.*node_modules\/as-try/, "as-try");
+    if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+        relPath = "./" + relPath;
+    }
+    return relPath;
+}
+function hasSameImport(names, pathStr, source) {
+    const targetNames = new Set(names);
+    return source.statements.some(s => {
+        if (s.kind !== 42)
+            return false;
+        const stmt = s;
+        if (path.resolve(stmt.path.value) !== path.resolve(pathStr))
+            return false;
+        const decls = stmt.declarations;
+        if (decls.length !== targetNames.size)
+            return false;
+        for (const decl of decls) {
+            if (!targetNames.has(decl.name.text))
+                return false;
+        }
+        return true;
+    });
 }
 //# sourceMappingURL=exception.js.map

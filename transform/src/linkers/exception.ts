@@ -14,11 +14,14 @@ import {
   NewExpression,
   PropertyAccessExpression,
   IfStatement,
+  Source,
 } from "assemblyscript/dist/assemblyscript.js";
 import { cloneNode, getFnName, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
-import { ThrowStatement } from "types:assemblyscript/src/ast";
+import { ImportStatement, ThrowStatement } from "types:assemblyscript/src/ast";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -26,7 +29,7 @@ const DEBUG = process.env["DEBUG"]
     : false
   : false;
 
-export class __ExceptionParent {
+export class ExceptionParent {
   public exception: CallExpression | ThrowStatement;
   public parent: FunctionDeclaration | DoStatement | null;
   constructor(exception: CallExpression | ThrowStatement, parent: FunctionDeclaration | DoStatement | null = null) {
@@ -35,15 +38,13 @@ export class __ExceptionParent {
   }
 }
 
-export class __ExceptionLinker extends Visitor {
-  static SN: __ExceptionLinker = new __ExceptionLinker();
+export class ExceptionLinker extends Visitor {
+  static SN: ExceptionLinker = new ExceptionLinker();
 
   public changed: boolean = false;
   public fn: FunctionDeclaration | null = null;
 
-  public exceptions: __ExceptionParent[] = [];
-
-  public addedImports = new Set<string>();
+  public exceptions: ExceptionParent[] = [];
 
   visitCallExpression(
     node: CallExpression,
@@ -52,7 +53,7 @@ export class __ExceptionLinker extends Visitor {
     const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
 
     if (fnName == "abort" || fnName == "unreachable") {
-      if (fnName == "abort") this.addedImports.add("__AbortState"); else this.addedImports.add("__UnreachableState");
+      if (fnName == "abort") this.addImport(new Set<string>(["__AbortState"]), node.range.source); else this.addImport(new Set<string>(["__UnreachableState"]), node.range.source);
 
       const newException = fnName == "abort" ?
         Node.createExpressionStatement(
@@ -113,7 +114,7 @@ export class __ExceptionLinker extends Visitor {
         : -1;
       // @ts-expect-error
       if (remainingStmts != -1 && remainingStmts < ref.length) {
-        this.addedImports.add("__ExceptionState");
+        this.addImport(new Set<string>(["__ExceptionState"]), node.range.source)
         const errorCheck = Node.createIfStatement(
           Node.createUnaryPrefixExpression(
             Token.Exclamation,
@@ -179,8 +180,7 @@ export class __ExceptionLinker extends Visitor {
     const value = node.value as NewExpression;
     if (value.kind != NodeKind.New || (value as NewExpression).typeName.identifier.text != "Error") throw new Error("__Exception handling only supports throwing Error classes");
 
-    this.addedImports.add("__ErrorState");
-
+    this.addImport(new Set<string>(["__ErrorState"]), node.range.source);
     const newThrow = Node.createExpressionStatement(
       Node.createCallExpression(
         Node.createPropertyAccessExpression(
@@ -313,12 +313,109 @@ export class __ExceptionLinker extends Visitor {
     // } 
   }
 
-  // addImport(name: string): void {
-  //   const from:
-  // }
+  addImport(imports: Set<string>, source: Source): void {
+    const sourcePath = path.resolve(process.cwd(), source.normalizedPath);
+
+    // __AbortState -> ./assembly/types/abort
+    // __ExceptionState -> ./assembly/types/exception
+    // __Exception -> ./assembly/types/exception
+    // __ErrorState -> ./assembly/types/error
+    // __UnreachableState -> ./assembly/types/unreachable
+
+    while (imports.size) {
+      let names: string[] = [];
+      let path = "";
+
+      if (imports.has("__AbortState")) {
+        names = ["__AbortState"];
+        path = calcPath(sourcePath, "abort");
+        imports.delete("__AbortState");
+      } else if (imports.has("__ExceptionState") && imports.has("__Exception")) {
+        names = ["__ExceptionState", "__Exception"];
+        path = calcPath(sourcePath, "exception");
+        imports.delete("__ExceptionState");
+        imports.delete("__Exception");
+      } else if (imports.has("__ExceptionState")) {
+        names = ["__ExceptionState"];
+        path = calcPath(sourcePath, "exception");
+        imports.delete("__ExceptionState");
+      } else if (imports.has("__Exception")) {
+        names = ["__Exception"];
+        path = calcPath(sourcePath, "exception");
+        imports.delete("__Exception");
+      } else if (imports.has("__ErrorState")) {
+        names = ["__ErrorState"];
+        path = calcPath(sourcePath, "error");
+        imports.delete("__ErrorState");
+      } else if (imports.has("__UnreachableState")) {
+        names = ["__UnreachableState"];
+        path = calcPath(sourcePath, "unreachable");
+        imports.delete("__UnreachableState");
+      } else {
+        return;
+      }
+
+      if (hasSameImport(names, path, source)) continue;
+
+      const importStatement = Node.createImportStatement(
+        names.map(v =>
+          Node.createImportDeclaration(
+            Node.createIdentifierExpression(v, source.range),
+            null,
+            source.range
+          )
+        ),
+        Node.createStringLiteralExpression(path, source.range),
+        source.range
+      );
+
+      source.statements.unshift(importStatement);
+
+      if (DEBUG) {
+        console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
+      }
+    }
+  }
 
   static replace(node: Node | Node[]): void {
-    __ExceptionLinker.SN.fn = null;
-    __ExceptionLinker.SN.visit(node);
+    ExceptionLinker.SN.fn = null;
+    ExceptionLinker.SN.visit(node);
   }
+}
+
+function calcPath(from: string, toName: string): string {
+  const thisFile = fileURLToPath(import.meta.url);
+  const baseDir = path.resolve(thisFile, "..", "..", "..", "..");
+  
+  let relPath = path.posix.join(
+    ...(path.relative(
+      path.dirname(from),
+      path.join(baseDir, "assembly", "types", toName)
+    ).split(path.sep))
+  ).replace(/^.*node_modules\/as-try/, "as-try");
+
+  if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+    relPath = "./" + relPath;
+  }
+
+  return relPath;
+}
+
+function hasSameImport(names: string[], pathStr: string, source: Source): boolean {
+  const targetNames = new Set(names);
+
+  return source.statements.some(s => {
+    if (s.kind !== NodeKind.Import) return false;
+    const stmt = s as ImportStatement;
+    if (path.resolve(stmt.path.value) !== path.resolve(pathStr)) return false;
+
+    const decls = stmt.declarations;
+    if (decls.length !== targetNames.size) return false;
+
+    for (const decl of decls) {
+      if (!targetNames.has(decl.name.text)) return false;
+    }
+
+    return true;
+  });
 }
