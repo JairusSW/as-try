@@ -17,7 +17,7 @@ export default class Transformer extends Transform {
       }
     }).filter((v) => !isStdlib(v));
 
-    for (const source of sources) FunctionLinker.visit(source);
+    FunctionLinker.visitSources(sources);
 
     const transformer = new TryTransform();
 

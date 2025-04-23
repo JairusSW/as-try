@@ -9,6 +9,7 @@ import {
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
+import { ClassDeclaration, ImportDeclaration, ImportStatement } from "types:assemblyscript/src/ast";
 
 export class FunctionData {
   public node: FunctionDeclaration;
@@ -23,12 +24,27 @@ export class FunctionData {
   }
 }
 
+export class SourceData {
+  public source: Source;
+  public fns: FunctionData[];
+  public imports: SourceData[];
+}
+
 export class FunctionLinker extends Visitor {
   static SN: FunctionLinker = new FunctionLinker();
 
   public fns: FunctionData[] = [];
-  public path: Map<string, NamespaceDeclaration> = new Map();
+  public path: Map<string, NamespaceDeclaration | ClassDeclaration> = new Map();
   public foundException: boolean = false;
+  public sources: Source[] = [];
+  public sourceData: SourceData[] = [];
+
+  visitImportStatement(node: ImportStatement, ref?: Node | Node[] | null): void {
+    const path = node.path;
+    const pathSource = this.sources.find(v => v.internalPath == node.internalPath);
+    const pathSourceData = this.sourceData.some(v => v.source.internalPath == node.internalPath);
+    if (!pathSourceData) {}
+  }
 
   visitFunctionDeclaration(
     node: FunctionDeclaration,
@@ -71,8 +87,17 @@ export class FunctionLinker extends Visitor {
     this.path.delete(nsName);
   }
 
-  static visit(source: Source): void {
-    FunctionLinker.SN.visitSource(source);
+  visitClassDeclaration(node: ClassDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
+    this.path.set(node.name.text, node);
+    super.visitClassDeclaration(node, isDefault, ref);
+    this.path.delete(node.name.text);
+  }
+  
+  static visitSources(sources: Source[]): void {
+    FunctionLinker.SN.sources = sources;
+    for (const source of sources) {
+      FunctionLinker.SN.visitSource(source);
+    }
   }
 
   static getFunction(fnName: Expression, path: string[] | null = null): FunctionData | null {

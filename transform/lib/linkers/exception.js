@@ -43,8 +43,6 @@ export class ExceptionLinker extends Visitor {
             if (!linked)
                 return;
             const linkedFn = linked.node;
-            if (linkedFn.name.text != "parse")
-                return;
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(linked.path ?
                 SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
                 : Node.createIdentifierExpression(getFnName("__try_" + linkedFn.name.text), node.expression.range), node.typeArguments, node.args, node.range));
