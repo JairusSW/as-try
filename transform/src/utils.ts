@@ -172,7 +172,7 @@ export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), pat
     const value = input[key];
     const newPath = path ? `${path}.${String(key)}` : String(key);
 
-    if (newPath.endsWith('range.source')) {
+    if (newPath.endsWith('.source')) {
       clone[key] = value;
     } else if (value && typeof value === 'object') {
       clone[key] = cloneNode(value, seen, newPath);

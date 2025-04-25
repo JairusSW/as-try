@@ -23,6 +23,12 @@ import { ImportStatement, ThrowStatement } from "types:assemblyscript/src/ast";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
+const reservedFns = [
+  "changetype",
+  "__new",
+  "__renew",
+  "__link"
+]
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
     ? true
@@ -51,6 +57,8 @@ export class ExceptionLinker extends Visitor {
     ref: Node | Node[] | null = null,
   ): void {
     const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
+
+    if (reservedFns.includes(fnName)) return;
 
     if (fnName == "abort" || fnName == "unreachable") {
       if (fnName == "abort") this.addImport(new Set<string>(["__AbortState"]), node.range.source); else this.addImport(new Set<string>(["__UnreachableState"]), node.range.source);
@@ -94,7 +102,7 @@ export class ExceptionLinker extends Visitor {
       if (!linked) return;
       const linkedFn = linked.node;
 
-      if (linkedFn.name.text != "parse") return;
+      // if (linkedFn.name.text != "parse") return;
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
           linked.path ?

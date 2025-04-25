@@ -5,6 +5,12 @@ import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+const reservedFns = [
+    "changetype",
+    "__new",
+    "__renew",
+    "__link"
+];
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
         ? true
@@ -25,6 +31,8 @@ export class ExceptionLinker extends Visitor {
     exceptions = [];
     visitCallExpression(node, ref = null) {
         const fnName = node.expression.kind == 6 ? node.expression.text : node.expression.property.text;
+        if (reservedFns.includes(fnName))
+            return;
         if (fnName == "abort" || fnName == "unreachable") {
             if (fnName == "abort")
                 this.addImport(new Set(["__AbortState"]), node.range.source);

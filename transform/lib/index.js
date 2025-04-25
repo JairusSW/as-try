@@ -5,7 +5,11 @@ import { isStdlib } from "./lib/util.js";
 import { readFileSync } from "fs";
 export default class Transformer extends Transform {
     afterParse(parser) {
-        const sources = parser.sources.sort((a, b) => {
+        let sources = parser.sources;
+        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/exception.ts"))) {
+            parser.parseFile(readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
+        }
+        sources = parser.sources.sort((a, b) => {
             if (a.sourceKind >= 2 && b.sourceKind <= 1) {
                 return -1;
             }
@@ -16,16 +20,12 @@ export default class Transformer extends Transform {
                 return 0;
             }
         }).filter((v) => !isStdlib(v));
-        for (const source of sources)
-            FunctionLinker.visit(source);
+        FunctionLinker.visitSources(sources);
         const transformer = new TryTransform();
-        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/exception.ts"))) {
-            parser.parseFile(readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
-        }
         for (const source of sources) {
             if (source.internalPath.startsWith("~lib/rt"))
                 continue;
-            console.log(source.normalizedPath);
+            console.log("Source: " + source.internalPath);
             transformer.visit(source);
         }
     }

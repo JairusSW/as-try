@@ -2,7 +2,6 @@ import { Node, Range, } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
-import { FunctionLinker } from "./linkers/function.js";
 import { ExceptionLinker } from "./linkers/exception.js";
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
@@ -66,7 +65,6 @@ export class TryTransform extends Visitor {
         replaceRef(node, [tryLoop || tryBlock, catchBlock], ref);
     }
     visitSource(node) {
-        FunctionLinker.visit(node);
         super.visitSource(node);
     }
 }

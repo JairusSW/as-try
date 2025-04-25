@@ -13,7 +13,6 @@ import {
 import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
-import { FunctionLinker } from "./linkers/function.js";
 import { ExceptionLinker } from "./linkers/exception.js";
 
 const DEBUG = process.env["DEBUG"]
@@ -159,7 +158,6 @@ export class TryTransform extends Visitor {
     replaceRef(node, [tryLoop || tryBlock, catchBlock], ref);
   }
   visitSource(node: Source): void {
-    FunctionLinker.visit(node);
     super.visitSource(node);
     // if (DEBUG) console.log("Source: " + toString(node));
   }

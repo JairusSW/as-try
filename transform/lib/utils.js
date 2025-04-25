@@ -151,7 +151,7 @@ export function cloneNode(input, seen = new WeakMap(), path = '') {
     for (const key of Reflect.ownKeys(input)) {
         const value = input[key];
         const newPath = path ? `${path}.${String(key)}` : String(key);
-        if (newPath.endsWith('range.source')) {
+        if (newPath.endsWith('.source')) {
             clone[key] = value;
         }
         else if (value && typeof value === 'object') {
