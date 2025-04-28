@@ -1,6 +1,7 @@
 import {
   CallExpression,
   CommonFlags,
+  ExpressionStatement,
   FunctionDeclaration,
   IdentifierExpression,
   Node,
@@ -11,7 +12,7 @@ import {
   TryStatement,
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./lib/visitor.js";
-import { toString } from "./lib/util.js";
+import { SimpleParser, toString } from "./lib/util.js";
 import { replaceRef } from "./utils.js";
 import { ExceptionLinker } from "./linkers/exception.js";
 
@@ -46,6 +47,7 @@ export class TryTransform extends Visitor {
 
     const hasBaseException = node.bodyStatements.some((v) => {
       if (!v) return false;
+      if (v.kind == NodeKind.Expression) v = (v as ExpressionStatement).expression;
       if (
         v.kind == NodeKind.Call
         && (v as CallExpression).expression.kind == NodeKind.Identifier
@@ -80,7 +82,7 @@ export class TryTransform extends Visitor {
       )
     ) : null;
 
-    ExceptionLinker.replace(tryLoop || tryBlock);
+    ExceptionLinker.replace(tryLoop || tryBlock, hasBaseException);
 
     if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 

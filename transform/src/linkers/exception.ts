@@ -49,8 +49,11 @@ export class ExceptionLinker extends Visitor {
 
   public changed: boolean = false;
   public fn: FunctionDeclaration | null = null;
+  public loop: DoStatement | null = null;
 
   public exceptions: ExceptionParent[] = [];
+
+  public baseException: boolean = false;
 
   visitCallExpression(
     node: CallExpression,
@@ -235,6 +238,12 @@ export class ExceptionLinker extends Visitor {
       node.range,
     );
 
+    if (this.loop) {
+      breakStmt = Node.createBreakStatement(null, node.range);
+      this.loop = null;
+      return breakStmt;
+    }
+
     if (parent) {
       const returnType = toString(parent.signature.returnType);
       if (DEBUG) console.log("Return Type: " + returnType + " derived from " + parent.name.text);
@@ -385,8 +394,12 @@ export class ExceptionLinker extends Visitor {
     }
   }
 
-  static replace(node: Node | Node[]): void {
+  static replace(node: Node | Node[], baseException: boolean = false): void {
     ExceptionLinker.SN.fn = null;
+    if (baseException && !Array.isArray(node) && node.kind == NodeKind.Do) {
+      const n = node as DoStatement;
+      ExceptionLinker.SN.loop = n;
+    }
     ExceptionLinker.SN.visit(node);
   }
 }

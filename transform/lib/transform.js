@@ -22,6 +22,8 @@ export class TryTransform extends Visitor {
         const hasBaseException = node.bodyStatements.some((v) => {
             if (!v)
                 return false;
+            if (v.kind == 38)
+                v = v.expression;
             if (v.kind == 9
                 && v.expression.kind == 6
                 && (v.expression.text == "abort"
@@ -38,7 +40,7 @@ export class TryTransform extends Visitor {
             node.range.end));
         const tryLoop = hasBaseException ? Node.createDoStatement(tryBlock, Node.createFalseExpression(node.range), new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
             node.range.end)) : null;
-        ExceptionLinker.replace(tryLoop || tryBlock);
+        ExceptionLinker.replace(tryLoop || tryBlock, hasBaseException);
         if (DEBUG)
             console.log("Before Try: " + toString(beforeTry));
         if (DEBUG)

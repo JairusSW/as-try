@@ -28,7 +28,9 @@ export class ExceptionLinker extends Visitor {
     static SN = new ExceptionLinker();
     changed = false;
     fn = null;
+    loop = null;
     exceptions = [];
+    baseException = false;
     visitCallExpression(node, ref = null) {
         const fnName = node.expression.kind == 6 ? node.expression.text : node.expression.property.text;
         if (reservedFns.includes(fnName))
@@ -118,6 +120,11 @@ export class ExceptionLinker extends Visitor {
     }
     getBreaker(node, parent = null) {
         let breakStmt = Node.createReturnStatement(null, node.range);
+        if (this.loop) {
+            breakStmt = Node.createBreakStatement(null, node.range);
+            this.loop = null;
+            return breakStmt;
+        }
         if (parent) {
             const returnType = toString(parent.signature.returnType);
             if (DEBUG)
@@ -181,8 +188,12 @@ export class ExceptionLinker extends Visitor {
             }
         }
     }
-    static replace(node) {
+    static replace(node, baseException = false) {
         ExceptionLinker.SN.fn = null;
+        if (baseException && !Array.isArray(node) && node.kind == 33) {
+            const n = node;
+            ExceptionLinker.SN.loop = n;
+        }
         ExceptionLinker.SN.visit(node);
     }
 }
