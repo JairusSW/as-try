@@ -45,7 +45,7 @@ export class TryTransform extends Visitor {
             console.log("Before Try: " + toString(beforeTry));
         if (DEBUG)
             console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
-        if (node.catchStatements.length)
+        if (node.catchStatements?.length)
             ExceptionLinker.SN.addImport(new Set(["__ExceptionState", "__Exception"]), node.range.source);
         const catchVar = Node.createVariableStatement(null, [
             Node.createVariableDeclaration(node.catchVariable, null, 16, null, Node.createNewExpression(Node.createSimpleTypeName("__Exception", node.range), null, [
@@ -65,6 +65,8 @@ export class TryTransform extends Visitor {
         if (DEBUG)
             console.log("Catch Block: " + toString(catchBlock));
         replaceRef(node, [tryLoop || tryBlock, catchBlock], ref);
+        super.visit(tryLoop || tryBlock);
+        super.visit(catchBlock);
     }
     visitSource(node) {
         super.visitSource(node);

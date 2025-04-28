@@ -1,7 +1,7 @@
 import { Transform } from "assemblyscript/dist/transform.js";
 import { TryTransform } from "./transform.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { isStdlib } from "./lib/util.js";
+import { isStdlib, toString } from "./lib/util.js";
 import { readFileSync } from "fs";
 export default class Transformer extends Transform {
     afterParse(parser) {
@@ -27,6 +27,8 @@ export default class Transformer extends Transform {
                 continue;
             console.log("Source: " + source.internalPath);
             transformer.visit(source);
+            if (source.sourceKind == 1)
+                console.log(toString(source));
         }
     }
 }

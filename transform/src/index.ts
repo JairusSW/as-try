@@ -1,8 +1,8 @@
-import { Parser } from "assemblyscript/dist/assemblyscript.js";
+import { Parser, SourceKind } from "assemblyscript/dist/assemblyscript.js";
 import { Transform } from "assemblyscript/dist/transform.js";
 import { TryTransform } from "./transform.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { isStdlib } from "./lib/util.js";
+import { isStdlib, toString } from "./lib/util.js";
 import { readFileSync } from "fs";
 import { Program } from "types:assemblyscript/src/program";
 
@@ -33,6 +33,7 @@ export default class Transformer extends Transform {
       if (source.internalPath.startsWith("~lib/rt")) continue;
       console.log("Source: " + source.internalPath)
       transformer.visit(source);
+      if (source.sourceKind == SourceKind.UserEntry) console.log(toString(source))
     }
   }
 }
