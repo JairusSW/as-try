@@ -5,6 +5,7 @@ import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { existsSync } from "node:fs";
 const reservedFns = [
     "changetype",
     "__new",
@@ -53,6 +54,35 @@ export class ExceptionLinker extends Visitor {
             if (!linked)
                 return;
             const linkedFn = linked.node;
+            if (linked.imported) {
+                const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
+                const pkgPath = path.join(baseDir, "node_modules");
+                let fromPath = node.range.source.normalizedPath;
+                let toPath = linkedFn.range.source.normalizedPath;
+                toPath = toPath.startsWith("~lib/")
+                    ?
+                        existsSync(path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))))
+                            ? path.join(pkgPath, toPath.slice(5))
+                            : toPath
+                    :
+                        path.join(baseDir, toPath);
+                fromPath = fromPath.startsWith("~lib/")
+                    ?
+                        existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
+                            ? path.join(pkgPath, fromPath.slice(5))
+                            : fromPath
+                    :
+                        path.join(baseDir, fromPath);
+                console.log("from: " + fromPath);
+                console.log("to: " + toPath);
+                console.log("base: " + baseDir);
+                console.log("pkg: " + pkgPath);
+                const relPath = path.posix.join(...(path.relative(path.dirname(fromPath), toPath).split(path.sep)));
+                console.log("rel path: " + relPath);
+                const importStmt = Node.createImportStatement([
+                    Node.createImportDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, node.range), null, node.range)
+                ], Node.createStringLiteralExpression("lol", node.range), node.range);
+            }
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(linked.path ?
                 SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
                 : Node.createIdentifierExpression(getFnName("__try_" + linkedFn.name.text), node.expression.range), node.typeArguments, node.args, node.range));
@@ -62,8 +92,6 @@ export class ExceptionLinker extends Visitor {
             if (remainingStmts != -1 && remainingStmts < ref.length) {
                 this.addImport(new Set(["__ExceptionState"]), node.range.source);
                 const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
-                if (DEBUG)
-                    console.log("Error Check:" + toString(errorCheck));
                 super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
                 replaceAfter(node, [overrideCall, errorCheck], ref);
             }
@@ -74,15 +102,9 @@ export class ExceptionLinker extends Visitor {
                 const linkedBody = linkedFn.body;
                 const overrideFn = Node.createFunctionDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, linkedFn.name.range), linkedFn.decorators, linkedFn.flags, linkedFn.typeParameters, linkedFn.signature, cloneNode(linkedBody), linkedFn.arrowKind, linkedFn.range);
                 linked.linked = true;
-                console.log("Set Fn " + overrideFn.name.text);
                 const lastFn = this.fn;
                 this.fn = overrideFn;
                 this.fn = lastFn;
-                console.log("Release Fn " + overrideFn.name.text);
-                if (DEBUG)
-                    console.log("Linked Fn: " + toString(overrideFn));
-                console.log(toString(this.currentSource));
-                console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
                 super.visit(overrideFn, ref);
                 replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
                 console.log(toString(linkedFn.range.source));

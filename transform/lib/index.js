@@ -25,7 +25,6 @@ export default class Transformer extends Transform {
         for (const source of sources) {
             if (source.internalPath.startsWith("~lib/rt"))
                 continue;
-            console.log("Source: " + source.internalPath);
             transformer.visit(source);
             if (source.sourceKind == 1)
                 console.log(toString(source));

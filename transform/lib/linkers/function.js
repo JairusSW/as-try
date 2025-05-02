@@ -5,11 +5,17 @@ export class FunctionData {
     ref;
     linked = false;
     path;
-    import = null;
+    imported = false;
     constructor(node, ref, path = null) {
         this.node = node;
         this.ref = ref;
         this.path = path;
+    }
+    clone() {
+        const fn = new FunctionData(this.node, this.ref, this.path);
+        fn.linked = this.linked;
+        fn.imported = this.imported;
+        return fn;
     }
 }
 export class SourceData {
@@ -56,6 +62,8 @@ export class FunctionLinker extends Visitor {
     visitFunctionDeclaration(node, isDefault, ref) {
         this.foundException = false;
         super.visitFunctionDeclaration(node, isDefault, ref);
+        if (!(node.flags & 2))
+            return;
         if (this.foundException) {
             const path = this.path.size ? new Map(this.path.entries()) : null;
             this.sD.fns.push(new FunctionData(node, ref, path));
@@ -128,16 +136,24 @@ export class FunctionLinker extends Visitor {
     static visitSources(sources) {
         FunctionLinker.SN.sources = sources;
         for (const source of sources) {
+            if (source.internalPath.startsWith("~lib/rt"))
+                continue;
+            if (source.internalPath.startsWith("~lib/performance"))
+                continue;
+            if (source.internalPath.startsWith("~lib/wasi_"))
+                continue;
+            if (source.internalPath.startsWith("~lib/shared/"))
+                continue;
+            if (source.internalPath.startsWith("~lib/performance"))
+                continue;
+            console.log("Linker Visiting: " + source.internalPath);
             FunctionLinker.SN.visitSource(source);
         }
     }
     static getFunction(fnName, path = null) {
         const name = getFnName(fnName, path);
-        console.log("Looking for: " + name);
         const source = fnName.range.source;
         const sourceData = FunctionLinker.SN.sourceData.find(v => v.source.internalPath == source.internalPath);
-        if (!sourceData)
-            console.log("Could not find source data");
         if (!sourceData)
             return null;
         const localFn = sourceData.fns.find((v) => {
@@ -145,14 +161,16 @@ export class FunctionLinker extends Visitor {
         });
         if (localFn)
             return localFn;
-        console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "));
         for (const imported of sourceData.imports) {
             console.log(imported.source.internalPath + " " + imported.fns.length);
-            const importedFn = imported.fns.find(v => {
+            let importedFn = imported.fns.find(v => {
                 return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
             });
-            if (importedFn)
+            if (importedFn) {
+                importedFn = importedFn.clone();
+                importedFn.imported = true;
                 return importedFn;
+            }
         }
         return null;
     }

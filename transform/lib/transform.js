@@ -34,15 +34,11 @@ export class TryTransform extends Visitor {
                 return true;
             return false;
         });
-        if (DEBUG)
-            console.log("Has Base Exception: " + hasBaseException);
         const tryBlock = Node.createBlockStatement([beforeTry, ...node.bodyStatements], new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
             node.range.end));
         const tryLoop = hasBaseException ? Node.createDoStatement(tryBlock, Node.createFalseExpression(node.range), new Range(this.baseStatements[0]?.range.start || node.range.start, this.baseStatements[this.baseStatements.length - 1]?.range.end ||
             node.range.end)) : null;
         ExceptionLinker.replace(tryLoop || tryBlock, hasBaseException);
-        if (DEBUG)
-            console.log("Before Try: " + toString(beforeTry));
         if (DEBUG)
             console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
         if (node.catchStatements?.length)

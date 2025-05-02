@@ -61,7 +61,7 @@ export class TryTransform extends Visitor {
       return false;
     });
 
-    if (DEBUG) console.log("Has Base Exception: " + hasBaseException)
+    // if (DEBUG) console.log("Has Base Exception: " + hasBaseException)
 
     const tryBlock = Node.createBlockStatement(
       [beforeTry, ...node.bodyStatements],
@@ -84,7 +84,7 @@ export class TryTransform extends Visitor {
 
     ExceptionLinker.replace(tryLoop || tryBlock, hasBaseException);
 
-    if (DEBUG) console.log("Before Try: " + toString(beforeTry));
+    // if (DEBUG) console.log("Before Try: " + toString(beforeTry));
 
     if (DEBUG) console.log("Try Block/Loop: " + toString(tryLoop || tryBlock));
 

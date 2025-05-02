@@ -1,12 +1,5 @@
-Added Function: time in ~lib/wasi_process
-Added Function: hrtime in ~lib/wasi_process
-Added Function: lazyArgv in ~lib/wasi_process
-Added Function: lazyEnv in ~lib/wasi_process
-Added Function: writeBuffer in ~lib/wasi_process
-Added Function: writeString in ~lib/wasi_process
-Added Function: getRandomValues in ~lib/wasi_crypto
-Added Function: now in ~lib/wasi_performance
-Added Function: bytes in ~lib/json-as/lib/as-bs
+Linker Visiting: ~lib/json-as/index
+Linker Visiting: ~lib/json-as/assembly/index
 Added Function: deserializeArray in ~lib/json-as/assembly/deserialize/simple/array
 Added Function: deserializeStruct in ~lib/json-as/assembly/deserialize/simple/struct
 Added Function: deserializeMap in ~lib/json-as/assembly/deserialize/simple/map
@@ -16,285 +9,64 @@ Added Function: stringify in ~lib/json-as/assembly/index
 Added Function: parse in ~lib/json-as/assembly/index
 Added Function: __serialize in ~lib/json-as/assembly/index
 Added Function: __deserialize in ~lib/json-as/assembly/index
+Linker Visiting: ~lib/json-as/lib/as-bs
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/string
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/array
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/map
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/bool
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/float
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/struct
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/map
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/date
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/integer
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/string
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/arbitrary
+Linker Visiting: ~lib/json-as/assembly/custom/sink
+Linker Visiting: ~lib/json-as/assembly/custom/chars
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/bool
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/integer
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/float
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/struct
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/arbitrary
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/object
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/object
+Linker Visiting: ~lib/json-as/assembly/serialize/simple/raw
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/raw
+Linker Visiting: ~lib/json-as/assembly/custom/util
+Linker Visiting: ~lib/json-as/assembly/globals/tables
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/arbitrary
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/array
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/bool
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/float
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/integer
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/map
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/struct
 Added Function: deserializeStructArray in ~lib/json-as/assembly/deserialize/simple/array/struct
-Source: ~lib/performance
-Source: ~lib/wasi_console
-Source: ~lib/wasi_crypto
-Source: ~lib/wasi_date
-Source: ~lib/wasi_internal
-Source: ~lib/wasi_performance
-Source: ~lib/wasi_process
-Source: ~lib/shared/runtime
-Source: ~lib/json-as/index
-Source: ~lib/json-as/assembly/index
-Source: ~lib/json-as/lib/as-bs
-Source: ~lib/json-as/assembly/serialize/simple/string
-Source: ~lib/json-as/assembly/serialize/simple/array
-Source: ~lib/json-as/assembly/serialize/simple/map
-Source: ~lib/json-as/assembly/deserialize/simple/bool
-Source: ~lib/json-as/assembly/deserialize/simple/array
-Source: ~lib/json-as/assembly/deserialize/simple/float
-Source: ~lib/json-as/assembly/deserialize/simple/struct
-Source: ~lib/json-as/assembly/deserialize/simple/map
-Source: ~lib/json-as/assembly/deserialize/simple/date
-Source: ~lib/json-as/assembly/deserialize/simple/integer
-Source: ~lib/json-as/assembly/deserialize/simple/string
-Source: ~lib/json-as/assembly/serialize/simple/arbitrary
-Source: ~lib/json-as/assembly/custom/sink
-Source: ~lib/json-as/assembly/custom/chars
-Source: ~lib/json-as/assembly/serialize/simple/bool
-Source: ~lib/json-as/assembly/serialize/simple/integer
-Source: ~lib/json-as/assembly/serialize/simple/float
-Source: ~lib/json-as/assembly/serialize/simple/struct
-Source: ~lib/json-as/assembly/deserialize/simple/arbitrary
-Source: ~lib/json-as/assembly/serialize/simple/object
-Source: ~lib/json-as/assembly/deserialize/simple/object
-Source: ~lib/json-as/assembly/serialize/simple/raw
-Source: ~lib/json-as/assembly/deserialize/simple/raw
-Source: ~lib/json-as/assembly/custom/util
-Source: ~lib/json-as/assembly/globals/tables
-Source: ~lib/json-as/assembly/deserialize/simple/array/arbitrary
-Source: ~lib/json-as/assembly/deserialize/simple/array/array
-Source: ~lib/json-as/assembly/deserialize/simple/array/bool
-Source: ~lib/json-as/assembly/deserialize/simple/array/float
-Source: ~lib/json-as/assembly/deserialize/simple/array/integer
-Source: ~lib/json-as/assembly/deserialize/simple/array/map
-Source: ~lib/json-as/assembly/deserialize/simple/array/struct
-Source: ~lib/json-as/assembly/deserialize/simple/array/string
-Source: assembly/test
+Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/string
+Linker Visiting: assembly/test
+Linker Visiting: assembly/types/exception
 Found try: try {
-  JSON.parse<Vec3>("\"hello\"");
+  JSON.parse<Vec3>("lol");
+  console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());
 } finally {
   console.log("Gracefully shutting down...");
   process.exit(0);
 }
-Has Base Exception: false
-Looking for: JSON.parse
-Looking in imports: ~lib/json-as/assembly/index assembly/types/exception
 ~lib/json-as/assembly/index 6
+from: /home/port/Code/AssemblyScript/as-try/assembly/test.ts
+to: /home/port/Code/AssemblyScript/as-try/node_modules/json-as/assembly/index.ts
+base: /home/port/Code/AssemblyScript/as-try
+pkg: /home/port/Code/AssemblyScript/as-try/node_modules
+rel path: ../node_modules/json-as/assembly/index.ts
 Import: import {
   __ExceptionState
 } from "./types/exception" in assembly/test.ts
-Error Check:if (!__ExceptionState.Failed) {}
+~lib/json-as/assembly/index 6
 Set Fn __try_parse
-Release Fn __try_parse
-Linked Fn: @inline
-export function __try_parse<T>(data: string): T {
-  const dataSize = bytes(data);
-  const dataPtr = changetype<usize>(data);
-  if (isBoolean<T>()) {
-    return deserializeBoolean(dataPtr, dataPtr + dataSize) as T;
-  } else if (isInteger<T>()) {
-    return deserializeInteger<T>(dataPtr, dataPtr + dataSize);
-  } else if (isFloat<T>()) {
-    return deserializeFloat<T>(dataPtr, dataPtr + dataSize);
-  } else if (isNullable<T>() && dataSize == 8 && load<u64>(dataPtr) == 30399761348886638) {
-    return null;
-  } else if (isString<T>()) {
-    return deserializeString(dataPtr, dataPtr + dataSize, __new(dataSize - 4, idof<string>()));
-  } else if (isArray<T>()) {
-    return inline.always(deserializeArray<nonnull<T>>(dataPtr, dataPtr + dataSize, changetype<usize>(instantiate<T>())));
-  } else {
-    let type: nonnull<T> = changetype<nonnull<T>>(0);
-    if (isDefined(type.__DESERIALIZE_CUSTOM)) {
-      const out = changetype<nonnull<T>>(0);
-      if (isDefined(type.__INITIALIZE)) out.__INITIALIZE();
-;
-      return out.__DESERIALIZE_CUSTOM(ptrToStr(dataPtr, dataPtr + dataSize));
-    } else if (isDefined(type.__DESERIALIZE)) {
-      const out = __new(offsetof<nonnull<T>>(), idof<nonnull<T>>());
-      if (isDefined(type.__INITIALIZE)) changetype<nonnull<T>>(out).__INITIALIZE();
-;
-      return inline.always(deserializeStruct<nonnull<T>>(dataPtr, dataPtr + dataSize, out));
-    } else if (type instanceof Map) {
-      return inline.always(deserializeMap<nonnull<T>>(dataPtr, dataPtr + dataSize, 0));
-    } else if (type instanceof Date) {
-      return deserializeDate(dataPtr, dataPtr + dataSize);
-    } else if (type instanceof JSON.Raw) {
-      return deserializeRaw(dataPtr, dataPtr + dataSize);
-    } else if (type instanceof JSON.Value) {
-      return inline.always(deserializeArbitrary(dataPtr, dataPtr + dataSize, 0));
-    } else if (type instanceof JSON.Obj) {
-      return inline.always(deserializeObject(dataPtr, dataPtr + dataSize, 0));
-    } else if (type instanceof JSON.Box) {
-      return new JSON.Box(parseBox(data, changetype<nonnull<T>>(0).value));
-    } else {
-      throw new Error(`Could not deserialize data ${data} to type ${nameof<T>()}. Make sure to add the correct decorators to classes.`);
-    }
-  }
-}
-null
-Visit Override Fn: __try_parse
-Set Fn __try_parse
-Looking for: bytes
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
-Set Fn __try_bytes
-Release Fn __try_bytes
-Linked Fn: @inline
-function __try_bytes<T>(o: T): i32 {
-  if (isInteger<T>() || isFloat<T>()) {
-    return sizeof<T>();
-  } else if (isManaged<T>() || isReference<T>()) {
-    return changetype<OBJECT>(changetype<usize>(o) - TOTAL_OVERHEAD).rtSize;
-  } else {
-    throw new Error("Cannot convert type " + nameof<T>() + " to bytes!");
-  }
-}
-null
-Visit Override Fn: __try_bytes
-Set Fn __try_bytes
-Looking for: isInteger
-Looking in imports: 
-Looking for: isFloat
-Looking in imports: 
-Looking for: sizeof
-Looking in imports: 
-Looking for: isManaged
-Looking in imports: 
-Looking for: isReference
-Looking in imports: 
-Import: import {
-  __ErrorState
-} from "../../../assembly/types/error" in ~lib/json-as/lib/as-bs.ts
-Fn (Throw): @inline
-function __try_bytes<T>(o: T): i32 {
-  if (isInteger<T>() || isFloat<T>()) {
-    return sizeof<T>();
-  } else if (isManaged<T>() || isReference<T>()) {
-    return changetype<OBJECT>(changetype<usize>(o) - TOTAL_OVERHEAD).rtSize;
-  } else {
-    throw new Error("Cannot convert type " + nameof<T>() + " to bytes!");
-  }
-}
-Return Type: i32 derived from __try_bytes
-Return: if (isBoolean<i32>()) return false;
-else if (isInteger<i32>()) return 0;
-else if (isFloat<i32>()) 0;
-else if (isManaged<i32>() || isUnmanaged<i32>()) return changetype<i32>(0);
-else return
-Breaker (Throw): if (isBoolean<i32>()) return false;
-else if (isInteger<i32>()) return 0;
-else if (isFloat<i32>()) 0;
-else if (isManaged<i32>() || isUnmanaged<i32>()) return changetype<i32>(0);
-else return
-Looking for: isBoolean
-Looking in imports: 
-Looking for: isInteger
-Looking in imports: 
-Looking for: isFloat
-Looking in imports: 
-Looking for: isManaged
-Looking in imports: 
-Looking for: isUnmanaged
-Looking in imports: 
-Release Fn __try_bytes
-import {
-  __ErrorState
-} from "../../../assembly/types/error";
-import {
-  OBJECT,
-  TOTAL_OVERHEAD
-} from "rt/common";
-export namespace bs {
-  export let buffer: ArrayBuffer = new ArrayBuffer(32);
-  export let offset: usize = changetype<usize>(buffer);
-  let bufferSize: usize = 32;
-  export let stackSize: usize = 0;
-  @inline
-  export function ensureSize(size: u32): void {
-    if (offset + size > bufferSize + changetype<usize>(buffer)) {
-      const deltaBytes = nextPowerOf2(size + 64);
-      bufferSize += deltaBytes;
-      const newPtr = changetype<ArrayBuffer>(__renew(changetype<usize>(buffer), bufferSize));
-      offset = offset + changetype<usize>(newPtr) - changetype<usize>(buffer);
-      buffer = newPtr;
-    }
-  }
-  @inline
-  export function proposeSize(size: u32): void {
-    if ((stackSize += size) > bufferSize) {
-      const deltaBytes = nextPowerOf2(size);
-      bufferSize += deltaBytes;
-      const newPtr = changetype<ArrayBuffer>(__renew(changetype<usize>(buffer), bufferSize));
-      offset = offset + changetype<usize>(newPtr) - changetype<usize>(buffer);
-      buffer = newPtr;
-    }
-  }
-  @inline
-  export function growSize(size: u32): void {
-    if ((stackSize += size) > bufferSize) {
-      const deltaBytes = nextPowerOf2(size + 64);
-      bufferSize += deltaBytes;
-      const newPtr = changetype<ArrayBuffer>(__renew(changetype<usize>(buffer), bufferSize));
-      offset = offset + changetype<usize>(newPtr) - changetype<usize>(buffer);
-      buffer = newPtr;
-    }
-  }
-  @inline
-  export function resize(newSize: u32): void {
-    const newPtr = changetype<ArrayBuffer>(__renew(changetype<usize>(buffer), newSize));
-    bufferSize = newSize;
-    offset = changetype<usize>(newPtr);
-    buffer = newPtr;
-    stackSize = 0;
-  }
-  @inline
-  export function out<T>(): T {
-    const len = offset - changetype<usize>(buffer);
-    const _out = __new(len, idof<T>());
-    memory.copy(_out, changetype<usize>(buffer), len);
-    offset = changetype<usize>(buffer);
-    stackSize = 0;
-    return changetype<T>(_out);
-  }
-  @inline
-  export function outTo<T>(dst: usize): T {
-    const len = offset - changetype<usize>(buffer);
-    if (len != changetype<OBJECT>(dst - TOTAL_OVERHEAD).rtSize) __renew(len, idof<T>());
-;
-    memory.copy(dst, changetype<usize>(buffer), len);
-    offset = changetype<usize>(buffer);
-    stackSize = 0;
-    return changetype<T>(dst);
-  }
-}
-@inline
-function nextPowerOf2(n: u32): u32 {
-  return 1 << (32 - clz(n - 1));
-}
-@inline
-function bytes<T>(o: T): i32 {
-  if (isInteger<T>() || isFloat<T>()) {
-    return sizeof<T>();
-  } else if (isManaged<T>() || isReference<T>()) {
-    return changetype<OBJECT>(changetype<usize>(o) - TOTAL_OVERHEAD).rtSize;
-  } else {
-    throw new Error("Cannot convert type " + nameof<T>() + " to bytes!");
-  }
-}
-@inline
-function __try_bytes<T>(o: T): i32 {
-  if (isInteger<T>() || isFloat<T>()) {
-    return sizeof<T>();
-  } else if (isManaged<T>() || isReference<T>()) {
-    return changetype<OBJECT>(changetype<usize>(o) - TOTAL_OVERHEAD).rtSize;
-  } else {
-    __ErrorState.error("Cannot convert type " + nameof<T>() + " to bytes!");
-    if (isBoolean<i32>()) return false;
-else if (isInteger<i32>()) return 0;
-else if (isFloat<i32>()) 0;
-else if (isManaged<i32>() || isUnmanaged<i32>()) return changetype<i32>(0);
-else return;
-  }
-}
-
-Link: __try_bytes(data)
-Looking for: isBoolean
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -318,9 +90,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeBoolean
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -344,9 +114,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isInteger
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -370,9 +138,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeInteger
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -396,9 +162,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isFloat
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -422,9 +186,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeFloat
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -448,9 +210,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isNullable
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -474,9 +234,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: load
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -500,9 +258,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isString
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -526,9 +282,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeString
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -552,9 +306,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isArray
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -578,9 +330,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: inline.always
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -604,9 +354,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isDefined
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -630,9 +378,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isDefined
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -656,9 +402,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: out.__INITIALIZE
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -682,9 +426,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: out.__DESERIALIZE_CUSTOM
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -708,9 +450,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isDefined
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -734,9 +474,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isDefined
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -760,9 +498,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: __INITIALIZE
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -786,9 +522,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: inline.always
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -812,9 +546,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: inline.always
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -838,9 +570,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeDate
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -864,9 +594,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: deserializeRaw
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -890,9 +618,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: inline.always
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -916,9 +642,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: inline.always
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -942,9 +666,31 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: parseBox
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
+~lib/json-as/assembly/serialize/simple/string 0
+~lib/json-as/assembly/serialize/simple/array 0
+~lib/json-as/assembly/serialize/simple/map 0
+~lib/json-as/assembly/deserialize/simple/bool 0
+~lib/json-as/assembly/deserialize/simple/array 1
+~lib/json-as/assembly/deserialize/simple/float 0
+~lib/json-as/assembly/deserialize/simple/struct 1
+~lib/json-as/assembly/deserialize/simple/map 1
+~lib/json-as/assembly/deserialize/simple/date 0
+~lib/json-as/assembly/deserialize/simple/integer 0
+~lib/json-as/assembly/deserialize/simple/string 0
+~lib/json-as/assembly/serialize/simple/arbitrary 0
+~lib/json-as/assembly/custom/sink 0
+~lib/json-as/assembly/custom/chars 0
+~lib/json-as/assembly/serialize/simple/bool 0
+~lib/json-as/assembly/serialize/simple/integer 0
+~lib/json-as/assembly/serialize/simple/float 0
+~lib/json-as/assembly/serialize/simple/struct 0
+~lib/json-as/assembly/deserialize/simple/arbitrary 1
+~lib/json-as/assembly/serialize/simple/object 0
+~lib/json-as/assembly/deserialize/simple/object 1
+~lib/json-as/assembly/serialize/simple/raw 0
+~lib/json-as/assembly/deserialize/simple/raw 0
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -973,7 +719,7 @@ Import: import {
 } from "../../../assembly/types/error" in ~lib/json-as/assembly/index.ts
 Fn (Throw): @inline
 export function __try_parse<T>(data: string): T {
-  const dataSize = __try_bytes(data);
+  const dataSize = bytes(data);
   const dataPtr = changetype<usize>(data);
   if (isBoolean<T>()) {
     return deserializeBoolean(dataPtr, dataPtr + dataSize) as T;
@@ -1027,9 +773,7 @@ else if (isInteger<T>()) return 0;
 else if (isFloat<T>()) 0;
 else if (isManaged<T>() || isUnmanaged<T>()) return changetype<T>(0);
 else return
-Looking for: isBoolean
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -1053,9 +797,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isInteger
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -1079,9 +821,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isFloat
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -1105,9 +845,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isManaged
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -1131,9 +869,7 @@ Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simpl
 ~lib/json-as/assembly/deserialize/simple/object 1
 ~lib/json-as/assembly/serialize/simple/raw 0
 ~lib/json-as/assembly/deserialize/simple/raw 0
-Looking for: isUnmanaged
-Looking in imports: ~lib/json-as/lib/as-bs ~lib/json-as/assembly/serialize/simple/string ~lib/json-as/assembly/serialize/simple/array ~lib/json-as/assembly/serialize/simple/map ~lib/json-as/assembly/deserialize/simple/bool ~lib/json-as/assembly/deserialize/simple/array ~lib/json-as/assembly/deserialize/simple/float ~lib/json-as/assembly/deserialize/simple/struct ~lib/json-as/assembly/deserialize/simple/map ~lib/json-as/assembly/deserialize/simple/date ~lib/json-as/assembly/deserialize/simple/integer ~lib/json-as/assembly/deserialize/simple/string ~lib/json-as/assembly/serialize/simple/arbitrary ~lib/json-as/assembly/custom/sink ~lib/json-as/assembly/custom/chars ~lib/json-as/assembly/serialize/simple/bool ~lib/json-as/assembly/serialize/simple/integer ~lib/json-as/assembly/serialize/simple/float ~lib/json-as/assembly/serialize/simple/struct ~lib/json-as/assembly/deserialize/simple/arbitrary ~lib/json-as/assembly/serialize/simple/object ~lib/json-as/assembly/deserialize/simple/object ~lib/json-as/assembly/serialize/simple/raw ~lib/json-as/assembly/deserialize/simple/raw
-~lib/json-as/lib/as-bs 1
+~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
 ~lib/json-as/assembly/serialize/simple/array 0
 ~lib/json-as/assembly/serialize/simple/map 0
@@ -1379,7 +1115,7 @@ export namespace JSON {
   }
   @inline
   export function __try_parse<T>(data: string): T {
-    const dataSize = __try_bytes(data);
+    const dataSize = bytes(data);
     const dataPtr = changetype<usize>(data);
     if (isBoolean<T>()) {
       return deserializeBoolean(dataPtr, dataPtr + dataSize) as T;
@@ -1771,12 +1507,14 @@ export function toBox<T>(data: T): JSON.Box<T> {
   return new JSON.Box<T>(data);
 }
 
-Link: JSON.__try_parse<Vec3>("\"hello\"")
-Before Try: __ExceptionState.Failed = false
+Link: JSON.__try_parse<Vec3>("lol")
+~lib/json-as/assembly/index 6
 Try Block/Loop: {
   __ExceptionState.Failed = false;
-  JSON.__try_parse<Vec3>("\"hello\"");
-  if (!__ExceptionState.Failed) {}
+  JSON.__try_parse<Vec3>("lol");
+  if (!__ExceptionState.Failed) {
+    console.log("This should not execute");
+  }
 }
 Import: import {
   __ExceptionState,
@@ -1793,6 +1531,36 @@ Catch Block: if (__ExceptionState.Failed) {
     process.exit(0);
   }
 }
-Source: assembly/types/exception
-Source: assembly/types/abort
-Source: assembly/types/error
+import {
+  __ExceptionState,
+  __Exception
+} from "./types/exception";
+import {
+  __ExceptionState
+} from "./types/exception";
+import {
+  JSON
+} from "json-as";
+@json
+class Vec3 {
+  public a: string = "";
+}
+{
+  __ExceptionState.Failed = false;
+  JSON.__try_parse<Vec3>("lol");
+  if (!__ExceptionState.Failed) {
+    console.log("This should not execute");
+  }
+}
+if (__ExceptionState.Failed) {
+  {
+    let e = new __Exception(__ExceptionState.Type);
+    console.log("Got an error: " + e.toString());
+    __ExceptionState.Failed = false;
+  }
+  {
+    console.log("Gracefully shutting down...");
+    process.exit(0);
+  }
+}
+

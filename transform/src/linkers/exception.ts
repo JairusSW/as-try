@@ -22,6 +22,7 @@ import { SimpleParser, toString } from "../lib/util.js";
 import { ImportStatement, ThrowStatement } from "types:assemblyscript/src/ast";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { existsSync } from "node:fs";
 
 const reservedFns = [
   "changetype",
@@ -105,7 +106,69 @@ export class ExceptionLinker extends Visitor {
       if (!linked) return;
       const linkedFn = linked.node;
 
-      // if (linkedFn.name.text != "parse") return;
+      // if (linkedFn.name.text != "parse") {
+      //   console.log("Skipping function: " + linkedFn.name.text);
+      //   console.log("Imported: " + linked.imported);
+    //   return;
+      // }
+      
+      if (linked.imported) {
+
+        const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
+        const pkgPath = path.join(baseDir, "node_modules");
+        let fromPath = node.range.source.normalizedPath;
+        let toPath = linkedFn.range.source.normalizedPath;
+
+        toPath = toPath.startsWith("~lib/")
+          ?
+          existsSync(path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))))
+            ? path.join(pkgPath, toPath.slice(5))
+            : toPath
+          :
+          path.join(baseDir, toPath);
+        
+        fromPath = fromPath.startsWith("~lib/")
+          ?
+          existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
+            ? path.join(pkgPath, fromPath.slice(5))
+            : fromPath
+          :
+          path.join(baseDir, fromPath);
+            
+
+        console.log("from: " + fromPath);
+        console.log("to: " + toPath);
+        console.log("base: " + baseDir);
+        console.log("pkg: " + pkgPath);
+
+        const relPath = path.posix.join(
+          ...(path.relative(
+            path.dirname(fromPath),
+            toPath
+          ).split(path.sep))
+        );
+
+        console.log("rel path: " + relPath)
+        
+        const importStmt = Node.createImportStatement([
+          Node.createImportDeclaration(
+            Node.createIdentifierExpression(
+              "__try_" + linkedFn.name.text,
+              node.range
+            ),
+            null,
+            node.range
+          )
+        ],
+          Node.createStringLiteralExpression(
+            "lol",
+            node.range
+          ),
+          node.range
+        );
+      
+        }
+
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
           linked.path ?
@@ -143,7 +206,7 @@ export class ExceptionLinker extends Visitor {
           null,
           node.range,
         );
-        if (DEBUG) console.log("Error Check:" + toString(errorCheck));
+        // if (DEBUG) console.log("Error Check:" + toString(errorCheck));
         super.visitBlockStatement(
           errorCheck.ifTrue as BlockStatement,
           errorCheck,
@@ -170,14 +233,14 @@ export class ExceptionLinker extends Visitor {
           linkedFn.range,
         );
         linked.linked = true;
-        console.log("Set Fn " + overrideFn.name.text);
+        // console.log("Set Fn " + overrideFn.name.text);
         const lastFn = this.fn;
         this.fn = overrideFn;
         this.fn = lastFn;
-        console.log("Release Fn " + overrideFn.name.text)
-        if (DEBUG) console.log("Linked Fn: " + toString(overrideFn));
-        console.log(toString(this.currentSource))
-        console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
+        // console.log("Release Fn " + overrideFn.name.text)
+        // if (DEBUG) console.log("Linked Fn: " + toString(overrideFn));
+        // console.log(toString(this.currentSource))
+        // console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
         super.visit(overrideFn, ref);
         replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
         console.log(toString(linkedFn.range.source))
@@ -407,7 +470,7 @@ export class ExceptionLinker extends Visitor {
 function calcPath(from: string, toName: string): string {
   const thisFile = fileURLToPath(import.meta.url);
   const baseDir = path.resolve(thisFile, "..", "..", "..", "..");
-  
+
   let relPath = path.posix.join(
     ...(path.relative(
       path.dirname(from),
