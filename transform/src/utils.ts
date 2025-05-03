@@ -1,4 +1,4 @@
-import { Node, NodeKind, PropertyAccessExpression } from "assemblyscript/dist/assemblyscript.js";
+import { CallExpression, ExpressionStatement, Node, NodeKind, PropertyAccessExpression, Statement } from "assemblyscript/dist/assemblyscript.js";
 import { IdentifierExpression } from "types:assemblyscript/src/ast";
 
 export function replaceRef(
@@ -182,4 +182,48 @@ export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), pat
   }
 
   return clone as Node | Node[] | null;
+}
+
+export function hasBaseException(statements: Statement[]): boolean {
+  return statements.some((v) => {
+    if (!v) return false;
+    if (v.kind == NodeKind.Expression) v = (v as ExpressionStatement).expression;
+    if (
+      v.kind == NodeKind.Call &&
+      (v as CallExpression).expression.kind == NodeKind.Identifier &&
+      (
+        ((v as CallExpression).expression as IdentifierExpression).text == "abort" ||
+        ((v as CallExpression).expression as IdentifierExpression).text == "unreachable"
+      )
+    ) return true;
+    if (v.kind == NodeKind.Throw) return true;
+    return false;
+  });
+}
+
+
+export function hasOnlyCalls(statements: Statement[]): boolean {
+  return statements.every((v) => {
+    if (!v) return true;
+
+    if (v.kind === NodeKind.Expression) {
+      v = (v as ExpressionStatement).expression;
+    }
+
+    if (v.kind !== NodeKind.Call) return false;
+
+    const callExpr = v as CallExpression;
+
+    if (
+      callExpr.expression.kind === NodeKind.Identifier &&
+      (
+        (callExpr.expression as IdentifierExpression).text === "abort" ||
+        (callExpr.expression as IdentifierExpression).text === "unreachable"
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 }

@@ -163,4 +163,38 @@ export function cloneNode(input, seen = new WeakMap(), path = '') {
     }
     return clone;
 }
+export function hasBaseException(statements) {
+    return statements.some((v) => {
+        if (!v)
+            return false;
+        if (v.kind == 38)
+            v = v.expression;
+        if (v.kind == 9 &&
+            v.expression.kind == 6 &&
+            (v.expression.text == "abort" ||
+                v.expression.text == "unreachable"))
+            return true;
+        if (v.kind == 45)
+            return true;
+        return false;
+    });
+}
+export function hasOnlyCalls(statements) {
+    return statements.every((v) => {
+        if (!v)
+            return true;
+        if (v.kind === 38) {
+            v = v.expression;
+        }
+        if (v.kind !== 9)
+            return false;
+        const callExpr = v;
+        if (callExpr.expression.kind === 6 &&
+            (callExpr.expression.text === "abort" ||
+                callExpr.expression.text === "unreachable")) {
+            return false;
+        }
+        return true;
+    });
+}
 //# sourceMappingURL=utils.js.map

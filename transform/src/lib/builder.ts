@@ -746,7 +746,7 @@ export class ASTBuilder extends Visitor {
     var sb = this.sb;
     sb.push("do ");
     this.visitNode(node.body);
-    if (node.body.kind == NodeKind.Block) {
+    if (node.body?.kind == NodeKind.Block) {
       sb.push(" while (");
     } else {
       util.indent(sb, this.indentLevel);

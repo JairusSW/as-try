@@ -16,10 +16,10 @@ import {
   IfStatement,
   Source,
 } from "assemblyscript/dist/assemblyscript.js";
-import { cloneNode, getFnName, replaceAfter, replaceRef, stripExpr } from "../utils.js";
+import { cloneNode, getFnName, hasBaseException, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
-import { ImportStatement, ThrowStatement } from "types:assemblyscript/src/ast";
+import { ImportStatement, ThrowStatement, TryStatement } from "types:assemblyscript/src/ast";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -55,6 +55,8 @@ export class ExceptionLinker extends Visitor {
   public exceptions: ExceptionParent[] = [];
 
   public baseException: boolean = false;
+
+  public imports: Set<string> = new Set<string>();
 
   visitCallExpression(
     node: CallExpression,
@@ -109,10 +111,10 @@ export class ExceptionLinker extends Visitor {
       // if (linkedFn.name.text != "parse") {
       //   console.log("Skipping function: " + linkedFn.name.text);
       //   console.log("Imported: " + linked.imported);
-    //   return;
+      //   return;
       // }
-      
-      if (linked.imported) {
+
+      if (linked.imported && !linked.path) {
 
         const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
         const pkgPath = path.join(baseDir, "node_modules");
@@ -126,7 +128,7 @@ export class ExceptionLinker extends Visitor {
             : toPath
           :
           path.join(baseDir, toPath);
-        
+
         fromPath = fromPath.startsWith("~lib/")
           ?
           existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
@@ -134,22 +136,26 @@ export class ExceptionLinker extends Visitor {
             : fromPath
           :
           path.join(baseDir, fromPath);
-            
+
 
         console.log("from: " + fromPath);
         console.log("to: " + toPath);
         console.log("base: " + baseDir);
         console.log("pkg: " + pkgPath);
 
-        const relPath = path.posix.join(
+        let relPath = removeExtension(path.posix.join(
           ...(path.relative(
             path.dirname(fromPath),
             toPath
           ).split(path.sep))
-        );
+        ));
+
+        if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+          relPath = "./" + relPath;
+        }
 
         console.log("rel path: " + relPath)
-        
+
         const importStmt = Node.createImportStatement([
           Node.createImportDeclaration(
             Node.createIdentifierExpression(
@@ -161,13 +167,15 @@ export class ExceptionLinker extends Visitor {
           )
         ],
           Node.createStringLiteralExpression(
-            "lol",
+            relPath,
             node.range
           ),
           node.range
         );
-      
-        }
+
+        if (!this.imports.has("__try_" + linkedFn.name.text)) node.range.source.statements.unshift(importStmt);
+        this.imports.add("__try_" + linkedFn.name.text)
+      }
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
@@ -301,9 +309,8 @@ export class ExceptionLinker extends Visitor {
       node.range,
     );
 
-    if (this.loop) {
+    if (!this.fn) {
       breakStmt = Node.createBreakStatement(null, node.range);
-      this.loop = null;
       return breakStmt;
     }
 
@@ -383,14 +390,6 @@ export class ExceptionLinker extends Visitor {
 
     if (DEBUG) console.log("Return: " + toString(breakStmt));
     return breakStmt;
-    // Add back for intentional 1st-layer do/while loop
-    // else if (this.loop) {
-    //   breakStmt = Node.createBreakStatement(
-    //     null,
-    //     node.range,
-    //   );
-    //   if (DEBUG) console.log("Break: " + toString(breakStmt));
-    // } 
   }
 
   addImport(imports: Set<string>, source: Source): void {
@@ -402,66 +401,53 @@ export class ExceptionLinker extends Visitor {
     // __ErrorState -> ./assembly/types/error
     // __UnreachableState -> ./assembly/types/unreachable
 
-    while (imports.size) {
-      let names: string[] = [];
+    for (const imp of imports.values()) {
       let path = "";
 
-      if (imports.has("__AbortState")) {
-        names = ["__AbortState"];
+      if (this.imports.has(imp)) continue;
+
+      if (imp == "__AbortState") {
         path = calcPath(sourcePath, "abort");
-        imports.delete("__AbortState");
-      } else if (imports.has("__ExceptionState") && imports.has("__Exception")) {
-        names = ["__ExceptionState", "__Exception"];
+      } else if (imp == "__ExceptionState" || imp == "__Exception") {
         path = calcPath(sourcePath, "exception");
-        imports.delete("__ExceptionState");
-        imports.delete("__Exception");
-      } else if (imports.has("__ExceptionState")) {
-        names = ["__ExceptionState"];
-        path = calcPath(sourcePath, "exception");
-        imports.delete("__ExceptionState");
-      } else if (imports.has("__Exception")) {
-        names = ["__Exception"];
-        path = calcPath(sourcePath, "exception");
-        imports.delete("__Exception");
-      } else if (imports.has("__ErrorState")) {
-        names = ["__ErrorState"];
+      } else if (imp == "__ErrorState") {
         path = calcPath(sourcePath, "error");
-        imports.delete("__ErrorState");
-      } else if (imports.has("__UnreachableState")) {
-        names = ["__UnreachableState"];
+      } else if (imp == "__UnreachableState") {
         path = calcPath(sourcePath, "unreachable");
-        imports.delete("__UnreachableState");
       } else {
-        return;
+        continue;
       }
 
-      if (hasSameImport(names, path, source)) continue;
-
       const importStatement = Node.createImportStatement(
-        names.map(v =>
+        [
           Node.createImportDeclaration(
-            Node.createIdentifierExpression(v, source.range),
+            Node.createIdentifierExpression(imp, source.range),
             null,
             source.range
           )
-        ),
+        ],
         Node.createStringLiteralExpression(path, source.range),
         source.range
       );
 
       source.statements.unshift(importStatement);
 
-      if (DEBUG) {
-        console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
-      }
+      this.imports.add(imp);
+
+      if (DEBUG) console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
     }
   }
 
-  static replace(node: Node | Node[], baseException: boolean = false): void {
+  static replace(node: Node | Node[]): void {
+    const source = Array.isArray(node) ? node[0]?.range.source : node.range.source;
+
     ExceptionLinker.SN.fn = null;
-    if (baseException && !Array.isArray(node) && node.kind == NodeKind.Do) {
-      const n = node as DoStatement;
-      ExceptionLinker.SN.loop = n;
+    ExceptionLinker.SN.currentSource = source;
+
+    if (ExceptionLinker.SN.currentSource.internalPath !== source.internalPath) {
+      ExceptionLinker.SN.imports = new Set<string>();
+      ExceptionLinker.SN.exceptions = [];
+      ExceptionLinker.SN.baseException = false;
     }
     ExceptionLinker.SN.visit(node);
   }
@@ -485,21 +471,7 @@ function calcPath(from: string, toName: string): string {
   return relPath;
 }
 
-function hasSameImport(names: string[], pathStr: string, source: Source): boolean {
-  const targetNames = new Set(names);
-
-  return source.statements.some(s => {
-    if (s.kind !== NodeKind.Import) return false;
-    const stmt = s as ImportStatement;
-    if (path.resolve(stmt.path.value) !== path.resolve(pathStr)) return false;
-
-    const decls = stmt.declarations;
-    if (decls.length !== targetNames.size) return false;
-
-    for (const decl of decls) {
-      if (!targetNames.has(decl.name.text)) return false;
-    }
-
-    return true;
-  });
+function removeExtension(filePath: string): string {
+  const parsed = path.parse(filePath);
+  return path.join(parsed.dir, parsed.name);
 }

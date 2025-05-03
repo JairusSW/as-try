@@ -648,7 +648,7 @@ export class ASTBuilder extends Visitor {
         var sb = this.sb;
         sb.push("do ");
         this.visitNode(node.body);
-        if (node.body.kind == 30) {
+        if (node.body?.kind == 30) {
             sb.push(" while (");
         }
         else {

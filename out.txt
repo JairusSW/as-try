@@ -45,26 +45,32 @@ Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/struct
 Added Function: deserializeStructArray in ~lib/json-as/assembly/deserialize/simple/array/struct
 Linker Visiting: ~lib/json-as/assembly/deserialize/simple/array/string
 Linker Visiting: assembly/test
+Added Function: foo in assembly/foo
+Linker Visiting: assembly/types/error
+Linker Visiting: assembly/foo
 Linker Visiting: assembly/types/exception
+Linker Visiting: assembly/types/abort
 Found try: try {
   JSON.parse<Vec3>("lol");
   console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());
+  try {
+    foo();
+  } catch (e) {
+    console.log("Got another error: " + e.toString());
+  }
 } finally {
   console.log("Gracefully shutting down...");
   process.exit(0);
 }
 ~lib/json-as/assembly/index 6
-from: /home/port/Code/AssemblyScript/as-try/assembly/test.ts
-to: /home/port/Code/AssemblyScript/as-try/node_modules/json-as/assembly/index.ts
-base: /home/port/Code/AssemblyScript/as-try
-pkg: /home/port/Code/AssemblyScript/as-try/node_modules
-rel path: ../node_modules/json-as/assembly/index.ts
 Import: import {
   __ExceptionState
 } from "./types/exception" in assembly/test.ts
 ~lib/json-as/assembly/index 6
+assembly/types/error 0
+assembly/foo 1
 Set Fn __try_parse
 ~lib/json-as/lib/as-bs 0
 ~lib/json-as/assembly/serialize/simple/string 0
@@ -1509,6 +1515,8 @@ export function toBox<T>(data: T): JSON.Box<T> {
 
 Link: JSON.__try_parse<Vec3>("lol")
 ~lib/json-as/assembly/index 6
+assembly/types/error 0
+assembly/foo 1
 Try Block/Loop: {
   __ExceptionState.Failed = false;
   JSON.__try_parse<Vec3>("lol");
@@ -1517,22 +1525,66 @@ Try Block/Loop: {
   }
 }
 Import: import {
-  __ExceptionState,
   __Exception
 } from "./types/exception" in assembly/test.ts
 Catch Block: if (__ExceptionState.Failed) {
-  {
-    let e = new __Exception(__ExceptionState.Type);
-    console.log("Got an error: " + e.toString());
-    __ExceptionState.Failed = false;
+  let e = new __Exception(__ExceptionState.Type);
+  console.log("Got an error: " + e.toString());
+  try {
+    foo();
+  } catch (e) {
+    console.log("Got another error: " + e.toString());
   }
-  {
-    console.log("Gracefully shutting down...");
-    process.exit(0);
+  __ExceptionState.Failed = false;
   }
+Finally Block: {
+  console.log("Gracefully shutting down...");
+  process.exit(0);
+}
+Found try: try {
+  foo();
+} catch (e) {
+  console.log("Got another error: " + e.toString());
+}
+~lib/json-as/assembly/index 6
+assembly/types/error 0
+assembly/foo 1
+from: /home/port/Code/AssemblyScript/as-try/assembly/test.ts
+to: /home/port/Code/AssemblyScript/as-try/assembly/foo.ts
+base: /home/port/Code/AssemblyScript/as-try
+pkg: /home/port/Code/AssemblyScript/as-try/node_modules
+rel path: ./foo
+Set Fn __try_foo
+Fn (Throw): export function __try_foo(): void {
+  throw new Error("Throw from catch");
+}
+Return Type: void derived from __try_foo
+Return: return
+Breaker (Throw): return
+Release Fn __try_foo
+export function foo(): void {
+  throw new Error("Throw from catch");
+}
+export function __try_foo(): void {
+  __ErrorState.error("Throw from catch");
+  return;
+}
+
+Link: __try_foo()
+Try Block/Loop: {
+  __ExceptionState.Failed = false;
+  __try_foo();
+  if (!__ExceptionState.Failed) {}
+}
+Catch Block: if (__ExceptionState.Failed) {
+  let e = new __Exception(__ExceptionState.Type);
+  console.log("Got another error: " + e.toString());
+  __ExceptionState.Failed = false;
 }
 import {
-  __ExceptionState,
+  __try_foo
+} from "./foo";
+import {
   __Exception
 } from "./types/exception";
 import {
@@ -1541,6 +1593,12 @@ import {
 import {
   JSON
 } from "json-as";
+import {
+  __ErrorState
+} from "./types/error";
+import {
+  foo
+} from "./foo";
 @json
 class Vec3 {
   public a: string = "";
@@ -1553,14 +1611,22 @@ class Vec3 {
   }
 }
 if (__ExceptionState.Failed) {
+  let e = new __Exception(__ExceptionState.Type);
+  console.log("Got an error: " + e.toString());
   {
+    __ExceptionState.Failed = false;
+    __try_foo();
+    if (!__ExceptionState.Failed) {}
+  }
+  if (__ExceptionState.Failed) {
     let e = new __Exception(__ExceptionState.Type);
-    console.log("Got an error: " + e.toString());
+    console.log("Got another error: " + e.toString());
     __ExceptionState.Failed = false;
   }
-  {
-    console.log("Gracefully shutting down...");
-    process.exit(0);
-  }
+  __ExceptionState.Failed = false;
+}
+{
+  console.log("Gracefully shutting down...");
+  process.exit(0);
 }
 

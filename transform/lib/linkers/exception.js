@@ -32,6 +32,7 @@ export class ExceptionLinker extends Visitor {
     loop = null;
     exceptions = [];
     baseException = false;
+    imports = new Set();
     visitCallExpression(node, ref = null) {
         const fnName = node.expression.kind == 6 ? node.expression.text : node.expression.property.text;
         if (reservedFns.includes(fnName))
@@ -54,7 +55,7 @@ export class ExceptionLinker extends Visitor {
             if (!linked)
                 return;
             const linkedFn = linked.node;
-            if (linked.imported) {
+            if (linked.imported && !linked.path) {
                 const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
                 const pkgPath = path.join(baseDir, "node_modules");
                 let fromPath = node.range.source.normalizedPath;
@@ -77,11 +78,17 @@ export class ExceptionLinker extends Visitor {
                 console.log("to: " + toPath);
                 console.log("base: " + baseDir);
                 console.log("pkg: " + pkgPath);
-                const relPath = path.posix.join(...(path.relative(path.dirname(fromPath), toPath).split(path.sep)));
+                let relPath = removeExtension(path.posix.join(...(path.relative(path.dirname(fromPath), toPath).split(path.sep))));
+                if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+                    relPath = "./" + relPath;
+                }
                 console.log("rel path: " + relPath);
                 const importStmt = Node.createImportStatement([
                     Node.createImportDeclaration(Node.createIdentifierExpression("__try_" + linkedFn.name.text, node.range), null, node.range)
-                ], Node.createStringLiteralExpression("lol", node.range), node.range);
+                ], Node.createStringLiteralExpression(relPath, node.range), node.range);
+                if (!this.imports.has("__try_" + linkedFn.name.text))
+                    node.range.source.statements.unshift(importStmt);
+                this.imports.add("__try_" + linkedFn.name.text);
             }
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(linked.path ?
                 SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
@@ -142,9 +149,8 @@ export class ExceptionLinker extends Visitor {
     }
     getBreaker(node, parent = null) {
         let breakStmt = Node.createReturnStatement(null, node.range);
-        if (this.loop) {
+        if (!this.fn) {
             breakStmt = Node.createBreakStatement(null, node.range);
-            this.loop = null;
             return breakStmt;
         }
         if (parent) {
@@ -164,57 +170,42 @@ export class ExceptionLinker extends Visitor {
     }
     addImport(imports, source) {
         const sourcePath = path.resolve(process.cwd(), source.normalizedPath);
-        while (imports.size) {
-            let names = [];
+        for (const imp of imports.values()) {
             let path = "";
-            if (imports.has("__AbortState")) {
-                names = ["__AbortState"];
+            if (this.imports.has(imp))
+                continue;
+            if (imp == "__AbortState") {
                 path = calcPath(sourcePath, "abort");
-                imports.delete("__AbortState");
             }
-            else if (imports.has("__ExceptionState") && imports.has("__Exception")) {
-                names = ["__ExceptionState", "__Exception"];
+            else if (imp == "__ExceptionState" || imp == "__Exception") {
                 path = calcPath(sourcePath, "exception");
-                imports.delete("__ExceptionState");
-                imports.delete("__Exception");
             }
-            else if (imports.has("__ExceptionState")) {
-                names = ["__ExceptionState"];
-                path = calcPath(sourcePath, "exception");
-                imports.delete("__ExceptionState");
-            }
-            else if (imports.has("__Exception")) {
-                names = ["__Exception"];
-                path = calcPath(sourcePath, "exception");
-                imports.delete("__Exception");
-            }
-            else if (imports.has("__ErrorState")) {
-                names = ["__ErrorState"];
+            else if (imp == "__ErrorState") {
                 path = calcPath(sourcePath, "error");
-                imports.delete("__ErrorState");
             }
-            else if (imports.has("__UnreachableState")) {
-                names = ["__UnreachableState"];
+            else if (imp == "__UnreachableState") {
                 path = calcPath(sourcePath, "unreachable");
-                imports.delete("__UnreachableState");
             }
             else {
-                return;
-            }
-            if (hasSameImport(names, path, source))
                 continue;
-            const importStatement = Node.createImportStatement(names.map(v => Node.createImportDeclaration(Node.createIdentifierExpression(v, source.range), null, source.range)), Node.createStringLiteralExpression(path, source.range), source.range);
-            source.statements.unshift(importStatement);
-            if (DEBUG) {
-                console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
             }
+            const importStatement = Node.createImportStatement([
+                Node.createImportDeclaration(Node.createIdentifierExpression(imp, source.range), null, source.range)
+            ], Node.createStringLiteralExpression(path, source.range), source.range);
+            source.statements.unshift(importStatement);
+            this.imports.add(imp);
+            if (DEBUG)
+                console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
         }
     }
-    static replace(node, baseException = false) {
+    static replace(node) {
+        const source = Array.isArray(node) ? node[0]?.range.source : node.range.source;
         ExceptionLinker.SN.fn = null;
-        if (baseException && !Array.isArray(node) && node.kind == 33) {
-            const n = node;
-            ExceptionLinker.SN.loop = n;
+        ExceptionLinker.SN.currentSource = source;
+        if (ExceptionLinker.SN.currentSource.internalPath !== source.internalPath) {
+            ExceptionLinker.SN.imports = new Set();
+            ExceptionLinker.SN.exceptions = [];
+            ExceptionLinker.SN.baseException = false;
         }
         ExceptionLinker.SN.visit(node);
     }
@@ -228,22 +219,8 @@ function calcPath(from, toName) {
     }
     return relPath;
 }
-function hasSameImport(names, pathStr, source) {
-    const targetNames = new Set(names);
-    return source.statements.some(s => {
-        if (s.kind !== 42)
-            return false;
-        const stmt = s;
-        if (path.resolve(stmt.path.value) !== path.resolve(pathStr))
-            return false;
-        const decls = stmt.declarations;
-        if (decls.length !== targetNames.size)
-            return false;
-        for (const decl of decls) {
-            if (!targetNames.has(decl.name.text))
-                return false;
-        }
-        return true;
-    });
+function removeExtension(filePath) {
+    const parsed = path.parse(filePath);
+    return path.join(parsed.dir, parsed.name);
 }
 //# sourceMappingURL=exception.js.map

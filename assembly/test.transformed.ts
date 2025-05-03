@@ -1,62 +1,215 @@
-import { __AbortState } from "./types/abort";
-import { ExceptionState, Exception } from "./types/exception";
+import {
+  __AbortState
+} from "./types/abort";
+import {
+  __ExceptionState,
+  __Exception
+} from "./types/exception";
+import {
+  describe,
+  expect
+} from "./__tests__/lib";
 
-// 1st Level Abort
-// ExceptionState.Failed = false;
-// {
-//   __AbortState.abort("Failed to execute!", "test.ts");
-//   if (!ExceptionState.Failed) {
-//     console.log("This should not execute");
-//   }
-// }
-// if (ExceptionState.Failed) {
-//   {
-//     let e = new Exception(ExceptionState.Type);
-//     console.log("Got an error: " + e.toString());
-//   }
-//   {
-//     console.log("Finished");
-//   }
-// }
-export function example(): void {
+describe("Should handle immediate abort call", () => {
   do {
-    console.log("Hey");
-    if (true) break;
-    console.log("skipped");
-  } while (0);
+    __ExceptionState.Failed = false;
+    __AbortState.abort("This should abort");
+    break;
+  } while (false);
 
-  console.log("LOL");
-}
-
-function doSomething(shouldAbort: boolean = false): string {
-  doSomethingElse(shouldAbort);
-  if (ExceptionState.Failed) return changetype<string>(4294967295);
-  return "Function 'doSomething' executed properly";
-}
-
-function doSomethingElse(shouldAbort: boolean = false): void {
-  if (shouldAbort) {
-    __AbortState.abort("Function 'doSomething' failed to execute properly!");
-    // Since it's void, I can return here or jump to the branch
-    return;
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: This should abort");
+      __ExceptionState.Failed = false;
+    }
   }
-  console.log("This should not execute");
-}
+});
 
-// 2nd Level Abort
-ExceptionState.Failed = false;
-{
-  const foo = doSomething(false);
-  if (!ExceptionState.Failed) {
-    console.log(foo);
+describe("Should execute finally block", () => {
+  let finallyExecuted = false;
+  do {
+    __ExceptionState.Failed = false;
+    __AbortState.abort("This should abort");
+    break;
+  } while (false);
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: This should abort");
+      __ExceptionState.Failed = false;
+    }
+    {
+      finallyExecuted = true;
+    }
   }
-}
-if (ExceptionState.Failed) {
+  expect(finallyExecuted.toString()).toBe("true");
+});
+describe("Should catch abort inside catch block", () => {
   {
-    let e = new Exception(ExceptionState.Type);
-    console.log("Got an error: " + e.toString());
+    __ExceptionState.Failed = false;
+    {
+      __ExceptionState.Failed = false;
+      __AbortState.abort("This should abort");
+      return;
+      return;
+    }
+    if (__ExceptionState.Failed) {
+      {
+        let e = new __Exception(__ExceptionState.Type);
+        __AbortState.abort("Abort from catch block");
+        return;
+        __ExceptionState.Failed = false;
+      }
+    }
   }
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: Abort from catch block");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should handle multiple abort calls", () => {
+  do {
+    __ExceptionState.Failed = false;
+    __AbortState.abort("First abort");
+    break;
+  } while (false);
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: First abort");
+      __ExceptionState.Failed = false;
+    }
+  }
+  do {
+    __ExceptionState.Failed = false;
+    __AbortState.abort("Second abort");
+    break;
+  } while (false);
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: Second abort");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should handle abort in nested try/catch blocks", () => {
   {
-    console.log("Finished");
+    __ExceptionState.Failed = false;
+    {
+      __ExceptionState.Failed = false;
+      __AbortState.abort("Inner abort");
+      return;
+      return;
+    }
+    if (__ExceptionState.Failed) {
+      {
+        let e = new __Exception(__ExceptionState.Type);
+        expect(e.toString()).toBe("abort: Inner abort");
+        __AbortState.abort("Outer abort");
+        return;
+        __ExceptionState.Failed = false;
+      }
+    }
   }
-}
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: Outer abort");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should handle abort in finally block", () => {
+  {
+    __ExceptionState.Failed = false;
+    {
+      __ExceptionState.Failed = false;
+      __AbortState.abort("Abort in try block");
+      return;
+      return;
+    }
+    if (__ExceptionState.Failed) {
+      {
+        let e = new __Exception(__ExceptionState.Type);
+        expect(e.toString()).toBe("abort: Abort in try block");
+        __ExceptionState.Failed = false;
+      }
+      {
+        __AbortState.abort("Abort in finally block");
+        return;
+      }
+    }
+  }
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: Abort in finally block");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should handle no errors and execute finally block with abort", () => {
+  {
+    __ExceptionState.Failed = false;
+    {
+      __ExceptionState.Failed = false;
+    }
+    if (__ExceptionState.Failed) {
+      {
+        __AbortState.abort("Abort in finally");
+        return;
+      }
+    }
+  }
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort: Abort in finally");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should handle abort without a message", () => {
+  do {
+    __ExceptionState.Failed = false;
+    __AbortState.abort();
+    break;
+  } while (false);
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect(e.toString()).toBe("abort");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
+describe("Should catch abort in nested try block", () => {
+  {
+    __ExceptionState.Failed = false;
+    {
+      __ExceptionState.Failed = false;
+      __AbortState.abort("Abort inside nested try");
+      return;
+      return;
+    }
+    if (__ExceptionState.Failed) {
+      {
+        let e = new __Exception(__ExceptionState.Type);
+        expect(e.toString()).toBe("abort: Abort inside nested try");
+        __ExceptionState.Failed = false;
+      }
+    }
+  }
+  if (__ExceptionState.Failed) {
+    {
+      let e = new __Exception(__ExceptionState.Type);
+      expect("Final Catch").toBe("abort: This should not execute");
+      __ExceptionState.Failed = false;
+    }
+  }
+});
