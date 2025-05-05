@@ -106,3 +106,60 @@ describe("Should catch abort in nested try block", () => {
     expect("Final Catch").toBe("abort: This should not execute");
   }
 });
+
+describe("Should handle abort from a called function", () => {
+  try {
+    abortingFunction();
+  } catch (e) {
+    expect(e.toString()).toBe("abort: Aborted from abortingFunction");
+  }
+});
+
+describe("Should handle abort from a nested function call", () => {
+  try {
+    nestedAbortingFunction();
+  } catch (e) {
+    expect(e.toString()).toBe("abort: Aborted from nestedAbortingFunction");
+  }
+});
+
+// describe("Should handle abort from an imported function", () => {
+//   try {
+//     importedFunction();
+//   } catch (e) {
+//     expect(e.toString()).toBe("abort: Aborted from importedFunction");
+//   }
+// });
+
+// describe("Should handle abort from a deeply nested imported function", () => {
+//   try {
+//     deepImportedFunction();
+//   } catch (e) {
+//     expect(e.toString()).toBe("abort: Aborted from deepImportedFunction");
+//   }
+// });
+
+// describe("Should abort in finally after successful imported function", () => {
+//   try {
+//     try {
+//       // Simulate successful call to imported function
+//       expect(true.toString()).toBe("true");
+//     } finally {
+//       abort("Abort after imported function");
+//     }
+//   } catch (e) {
+//     expect(e.toString()).toBe("abort: Abort after imported function");
+//   }
+// });
+
+function abortingFunction(): void {
+  abort("Aborted from abortingFunction");
+}
+
+function nestedAbortingFunction(): void {
+  try {
+    abortingFunction();
+  } catch (e) {
+    abort("Aborted from nestedAbortingFunction");
+  }
+}

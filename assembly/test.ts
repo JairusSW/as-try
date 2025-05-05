@@ -6,17 +6,22 @@ import { foo } from "./foo";
 class Vec3 {
   public a: string = "";
 }
+
+function abortingFunction(): void {
+  abort("Aborted from abortingFunction");
+}
+
 try {
   // Do something
-  JSON.parse<Vec3>("lol");
+  abortingFunction()
   console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());
-  try {
-    foo();
-  } catch (e) {
-    console.log("Got another error: " + e.toString());
-  }
+  // try {
+  //   foo();
+  // } catch (e) {
+  //   console.log("Got another error: " + e.toString());
+  // }
 } finally {
   console.log("Gracefully shutting down...");
   process.exit(0);

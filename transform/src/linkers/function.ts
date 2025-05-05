@@ -6,7 +6,6 @@ import {
   ThrowStatement,
   NamespaceDeclaration,
   Expression,
-  ImportDeclaration,
   ClassDeclaration,
   ImportStatement,
   MethodDeclaration,
@@ -15,14 +14,21 @@ import {
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
 
+const DEBUG = process.env["DEBUG"]
+  ? process.env["DEBUG"] == "true"
+    ? true
+    : false
+  : false;
+
 export class FunctionData {
   public node: FunctionDeclaration;
   public ref: Node | Node[] | null;
   public linked: boolean = false;
   public path: Map<string, NamespaceDeclaration> | null;
+  public exported: boolean = false;
   public imported: boolean = false;
 
-  constructor(node: FunctionDeclaration, ref: Node | Node[] | null, path: Map<string, NamespaceDeclaration> = null) {
+  constructor(node: FunctionDeclaration, ref: Node | Node[] | null, exported: boolean = false, path: Map<string, NamespaceDeclaration> = null) {
     this.node = node;
     this.ref = ref;
     this.path = path;
@@ -95,15 +101,13 @@ export class FunctionLinker extends Visitor {
     isDefault?: boolean,
     ref?: Node | Node[] | null,
   ): void {
-    this.foundException = false;
     super.visitFunctionDeclaration(node, isDefault, ref);
-    
-    if (!(node.flags & CommonFlags.Export)) return;
-    
+
     if (this.foundException) {
       const path = this.path.size ? new Map<string, NamespaceDeclaration | ClassDeclaration>(this.path.entries()) : null;
-      this.sD.fns.push(new FunctionData(node, ref, path));
-      console.log("Added Function: " + node.name.text + " in " + node.range.source.internalPath);
+      this.sD.fns.push(new FunctionData(node, ref, (node.flags & CommonFlags.Export) ? true : false, path));
+      if (DEBUG) console.log("Added Function: " + node.name.text + " in " + node.range.source.internalPath);
+      this.foundException = false;
     }
   }
 
@@ -113,7 +117,7 @@ export class FunctionLinker extends Visitor {
 
     if (this.foundException) {
       const path = this.path.size ? new Map<string, NamespaceDeclaration | ClassDeclaration>(this.path.entries()) : null;
-      this.sD.fns.push(new FunctionData(node, ref, path));
+      this.sD.fns.push(new FunctionData(node, ref, false, path)); // I should really check if the class is exported and if the method is public
     }
   }
 
@@ -197,7 +201,7 @@ export class FunctionLinker extends Visitor {
       if (source.internalPath.startsWith("~lib/wasi_")) continue;
       if (source.internalPath.startsWith("~lib/shared/")) continue;
       if (source.internalPath.startsWith("~lib/performance")) continue;
-      console.log("Linker Visiting: " + source.internalPath);
+      // console.log("Linker Visiting: " + source.internalPath);
       FunctionLinker.SN.visitSource(source);
     }
   }
@@ -227,9 +231,9 @@ export class FunctionLinker extends Visitor {
 
     // console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
     for (const imported of sourceData.imports) {
-      console.log(imported.source.internalPath + " " + imported.fns.length)
+      // console.log(imported.source.internalPath + " " + imported.fns.length)
       let importedFn = imported.fns.find(v => {
-        return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
+        return v.exported && name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
       });
       if (importedFn) {
         importedFn = importedFn.clone();

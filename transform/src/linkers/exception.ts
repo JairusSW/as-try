@@ -138,10 +138,10 @@ export class ExceptionLinker extends Visitor {
           path.join(baseDir, fromPath);
 
 
-        console.log("from: " + fromPath);
-        console.log("to: " + toPath);
-        console.log("base: " + baseDir);
-        console.log("pkg: " + pkgPath);
+        // console.log("from: " + fromPath);
+        // console.log("to: " + toPath);
+        // console.log("base: " + baseDir);
+        // console.log("pkg: " + pkgPath);
 
         let relPath = removeExtension(path.posix.join(
           ...(path.relative(
@@ -154,7 +154,7 @@ export class ExceptionLinker extends Visitor {
           relPath = "./" + relPath;
         }
 
-        console.log("rel path: " + relPath)
+        // console.log("rel path: " + relPath)
 
         const importStmt = Node.createImportStatement([
           Node.createImportDeclaration(
@@ -251,7 +251,7 @@ export class ExceptionLinker extends Visitor {
         // console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
         super.visit(overrideFn, ref);
         replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
-        console.log(toString(linkedFn.range.source))
+        // console.log(toString(linkedFn.range.source))
       }
 
       if (DEBUG) console.log("Link: " + toString(overrideCall));

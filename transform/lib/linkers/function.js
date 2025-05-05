@@ -1,12 +1,18 @@
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
+const DEBUG = process.env["DEBUG"]
+    ? process.env["DEBUG"] == "true"
+        ? true
+        : false
+    : false;
 export class FunctionData {
     node;
     ref;
     linked = false;
     path;
+    exported = false;
     imported = false;
-    constructor(node, ref, path = null) {
+    constructor(node, ref, exported = false, path = null) {
         this.node = node;
         this.ref = ref;
         this.path = path;
@@ -60,14 +66,13 @@ export class FunctionLinker extends Visitor {
         this.sD.imports.push(externSource);
     }
     visitFunctionDeclaration(node, isDefault, ref) {
-        this.foundException = false;
         super.visitFunctionDeclaration(node, isDefault, ref);
-        if (!(node.flags & 2))
-            return;
         if (this.foundException) {
             const path = this.path.size ? new Map(this.path.entries()) : null;
-            this.sD.fns.push(new FunctionData(node, ref, path));
-            console.log("Added Function: " + node.name.text + " in " + node.range.source.internalPath);
+            this.sD.fns.push(new FunctionData(node, ref, (node.flags & 2) ? true : false, path));
+            if (DEBUG)
+                console.log("Added Function: " + node.name.text + " in " + node.range.source.internalPath);
+            this.foundException = false;
         }
     }
     visitMethodDeclaration(node, ref) {
@@ -75,7 +80,7 @@ export class FunctionLinker extends Visitor {
         super.visitMethodDeclaration(node, ref);
         if (this.foundException) {
             const path = this.path.size ? new Map(this.path.entries()) : null;
-            this.sD.fns.push(new FunctionData(node, ref, path));
+            this.sD.fns.push(new FunctionData(node, ref, false, path));
         }
     }
     visitCallExpression(node, ref) {
@@ -146,7 +151,6 @@ export class FunctionLinker extends Visitor {
                 continue;
             if (source.internalPath.startsWith("~lib/performance"))
                 continue;
-            console.log("Linker Visiting: " + source.internalPath);
             FunctionLinker.SN.visitSource(source);
         }
     }
@@ -162,9 +166,8 @@ export class FunctionLinker extends Visitor {
         if (localFn)
             return localFn;
         for (const imported of sourceData.imports) {
-            console.log(imported.source.internalPath + " " + imported.fns.length);
             let importedFn = imported.fns.find(v => {
-                return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
+                return v.exported && name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
             });
             if (importedFn) {
                 importedFn = importedFn.clone();

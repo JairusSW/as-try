@@ -1,8 +1,8 @@
-import { Parser, SourceKind } from "assemblyscript/dist/assemblyscript.js";
+import { Parser } from "assemblyscript/dist/assemblyscript.js";
 import { Transform } from "assemblyscript/dist/transform.js";
 import { TryTransform } from "./transform.js";
 import { FunctionLinker } from "./linkers/function.js";
-import { isStdlib, toString } from "./lib/util.js";
+import { isStdlib } from "./lib/util.js";
 import { readFileSync } from "fs";
 
 export default class Transformer extends Transform {
@@ -34,9 +34,12 @@ export default class Transformer extends Transform {
 
     for (const source of sources) {
       if (source.internalPath.startsWith("~lib/rt")) continue;
+      if (source.internalPath.startsWith("~lib/performance")) continue;
+      if (source.internalPath.startsWith("~lib/wasi_")) continue;
+      if (source.internalPath.startsWith("~lib/shared/")) continue;
       // console.log("Source: " + source.internalPath)
       transformer.visit(source);
-      if (source.sourceKind == SourceKind.UserEntry) console.log(toString(source))
+      // if (source.sourceKind == SourceKind.UserEntry) console.log(toString(source))
     }
   }
 }
