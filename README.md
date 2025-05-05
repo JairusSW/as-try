@@ -11,9 +11,9 @@
 
 ## To-do
 
-- [ ] Handle all (`abort/throw/unreachable`) exceptions
-- [ ] Handle exceptions within functions or blocks
-- [ ] Handle nested (multiple) exceptions
+- [x] Handle all (`abort/throw/unreachable`) exceptions
+- [x] Handle exceptions within functions or blocks
+- [x] Handle nested (multiple) exceptions
 
 ## 📚 Contents
 
