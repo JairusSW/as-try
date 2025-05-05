@@ -1,5 +1,3 @@
-import { __AbortState } from "../types/abort";
-import { __ExceptionState, __Exception } from "../types/exception";
 import { describe, expect } from "./lib";
 
 describe("Should handle immediate abort call", () => {

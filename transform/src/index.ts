@@ -4,7 +4,6 @@ import { TryTransform } from "./transform.js";
 import { FunctionLinker } from "./linkers/function.js";
 import { isStdlib, toString } from "./lib/util.js";
 import { readFileSync } from "fs";
-import { Program } from "types:assemblyscript/src/program";
 
 export default class Transformer extends Transform {
   afterParse(parser: Parser): void {
@@ -13,6 +12,10 @@ export default class Transformer extends Transform {
 
     if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/exception.ts"))) {
       parser.parseFile(readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
+    }
+
+    if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/unreachable.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/unreachable.ts"))) {
+      parser.parseFile(readFileSync("./assembly/types/unreachable.ts").toString(), "./assembly/types/unreachable.ts", false);
     }
 
     sources = parser.sources.sort((a, b) => {
