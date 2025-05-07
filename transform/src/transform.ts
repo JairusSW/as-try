@@ -142,7 +142,7 @@ export class TryTransform extends Visitor {
   visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
     const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
     if (fnName == "abort" || fnName == "unreachable") this.foundTry = true;
-    super.visitCallExpression(node, ref);  
+    super.visitCallExpression(node, ref);
   }
   visitSource(node: Source): void {
     super.visitSource(node);
@@ -155,17 +155,19 @@ export class TryTransform extends Visitor {
   }
   addImport(imports: string[], source: Source): void {
     const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
-    const pkgPath = path.join(baseDir, "node_modules");
+    const pkgPath = path.join(process.cwd(), "node_modules");
     let fromPath = source.normalizedPath;
     let toPath = path.join(baseDir, "assembly", "types");
 
+    console.log("exists: " + path.join(process.cwd(), fromPath));
     fromPath = fromPath.startsWith("~lib/")
       ?
       fs.existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
         ? path.join(pkgPath, fromPath.slice(5))
         : fromPath
       :
-      path.join(baseDir, fromPath);
+      path.join(process.cwd(), fromPath);
+
 
 
     // console.log("from: " + fromPath);
@@ -173,7 +175,6 @@ export class TryTransform extends Visitor {
     // console.log("base: " + baseDir);
     // console.log("pkg: " + pkgPath);
 
-    // console.log("rel path: " + relPath)
 
     for (const i of imports) {
       let file = "";
@@ -195,6 +196,9 @@ export class TryTransform extends Visitor {
           path.join(toPath, file)
         ).split(path.sep))
       ));
+
+      if (relPath.includes("node_modules" + path.sep + "as-try")) relPath = "as-try" + relPath.slice(relPath.indexOf("node_modules" + path.sep + "as-try") + 19);
+      // console.log("rel path: " + relPath)
 
       if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
         relPath = "./" + relPath;

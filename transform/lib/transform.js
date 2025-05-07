@@ -71,16 +71,17 @@ export class TryTransform extends Visitor {
     }
     addImport(imports, source) {
         const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
-        const pkgPath = path.join(baseDir, "node_modules");
+        const pkgPath = path.join(process.cwd(), "node_modules");
         let fromPath = source.normalizedPath;
         let toPath = path.join(baseDir, "assembly", "types");
+        console.log("exists: " + path.join(process.cwd(), fromPath));
         fromPath = fromPath.startsWith("~lib/")
             ?
                 fs.existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
                     ? path.join(pkgPath, fromPath.slice(5))
                     : fromPath
             :
-                path.join(baseDir, fromPath);
+                path.join(process.cwd(), fromPath);
         for (const i of imports) {
             let file = "";
             if (i == "__AbortState") {
@@ -99,6 +100,8 @@ export class TryTransform extends Visitor {
                 continue;
             }
             let relPath = removeExtension(path.posix.join(...(path.relative(path.dirname(fromPath), path.join(toPath, file)).split(path.sep))));
+            if (relPath.includes("node_modules" + path.sep + "as-try"))
+                relPath = "as-try" + relPath.slice(relPath.indexOf("node_modules" + path.sep + "as-try") + 19);
             if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
                 relPath = "./" + relPath;
             }

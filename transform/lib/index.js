@@ -10,12 +10,31 @@ export default class Transformer extends Transform {
         let sources = parser.sources;
         const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
         sources.forEach(v => console.log(v.normalizedPath));
-        console.log("Added source: assembly/types/exception.ts");
-        parser.parseFile(fs.readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
-        console.log("Added source: assembly/types/unreachable.ts");
-        parser.parseFile(fs.readFileSync("./assembly/types/unreachable.ts").toString(), "./assembly/types/unreachable.ts", false);
-        console.log("Added source: assembly/types/abort.ts");
-        parser.parseFile(fs.readFileSync("./assembly/types/abort.ts").toString(), "./assembly/types/abort.ts", false);
+        console.log("Base Dir: " + baseDir);
+        const isLib = path.dirname(baseDir);
+        console.log("isLib: " + isLib);
+        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts"))) {
+            const p = "./assembly/types/exception.ts";
+            if (fs.existsSync(path.join(baseDir, p))) {
+                console.log("Added source: " + p);
+                parser.parseFile(fs.readFileSync(path.join(baseDir, p)).toString(), p, false);
+            }
+        }
+        if (!sources.some(v => v.normalizedPath.startsWith("~lib/as-try/assembly/types/exception.ts"))) {
+            console.log("Added source: ~lib/as-try/assembly/types/exception.ts");
+            parser.parseFile(fs.readFileSync(path.join(baseDir, "assembly", "types", "exception.ts")).toString(), "~lib/as-try/assembly/types/exception.ts", false);
+        }
+        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/unreachable.ts"))) {
+            const p = "./assembly/types/unreachable.ts";
+            if (fs.existsSync(path.join(baseDir, p))) {
+                console.log("Added source: " + p);
+                parser.parseFile(fs.readFileSync(path.join(baseDir, p)).toString(), p, false);
+            }
+        }
+        if (!sources.some(v => v.normalizedPath.startsWith("~lib/as-try/assembly/types/unreachable.ts"))) {
+            console.log("Added source: ~lib/as-try/assembly/types/unreachable.ts");
+            parser.parseFile(fs.readFileSync(path.join(baseDir, "assembly", "types", "unreachable.ts")).toString(), "~lib/as-try/assembly/types/unreachable.ts", false);
+        }
         sources = parser.sources.sort((a, b) => {
             if (a.sourceKind >= 2 && b.sourceKind <= 1) {
                 return -1;
