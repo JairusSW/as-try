@@ -1,4 +1,5 @@
 import { CallExpression, ExpressionStatement, Node, NodeKind, PropertyAccessExpression, Statement } from "assemblyscript/dist/assemblyscript.js";
+import path from "path";
 import { IdentifierExpression } from "types:assemblyscript/src/ast";
 
 export function replaceRef(
@@ -226,4 +227,9 @@ export function hasOnlyCalls(statements: Statement[]): boolean {
 
     return true;
   });
+}
+
+export function removeExtension(filePath: string): string {
+  const parsed = path.parse(filePath);
+  return path.join(parsed.dir, parsed.name);
 }

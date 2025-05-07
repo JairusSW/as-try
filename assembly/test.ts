@@ -1,5 +1,3 @@
-import { JSON } from "json-as";
-import { __ErrorState } from "./types/error";
 import { foo } from "./foo";
 
 @json
@@ -13,7 +11,7 @@ function abortingFunction(): void {
 
 try {
   // Do something
-  abortingFunction()
+  foo()
   console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());

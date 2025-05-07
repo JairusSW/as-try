@@ -6,7 +6,7 @@ export namespace __UnreachableState {
     __ExceptionState.Failed = false;
   }
   // @ts-ignore: inline
-  export function unreachable(): void {
+  @inline export function unreachable(): void {
     __ExceptionState.Failed = true;
     __ExceptionState.Type = __ExceptionType.Unreachable;
   }

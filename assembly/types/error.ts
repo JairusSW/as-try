@@ -12,7 +12,7 @@ export namespace __ErrorState {
     __ErrorState.stack = null;
   }
   // @ts-ignore: inline
-  export function error(message: string = ""): void {
+  @inline export function error(message: string = ""): void {
     __ExceptionState.Failed = true;
     __ExceptionState.Type = __ExceptionType.Error;
 

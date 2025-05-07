@@ -2,16 +2,20 @@ import { Transform } from "assemblyscript/dist/transform.js";
 import { TryTransform } from "./transform.js";
 import { FunctionLinker } from "./linkers/function.js";
 import { isStdlib } from "./lib/util.js";
-import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
 export default class Transformer extends Transform {
     afterParse(parser) {
         let sources = parser.sources;
-        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/exception.ts"))) {
-            parser.parseFile(readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
-        }
-        if (!sources.some(v => v.normalizedPath.startsWith("assembly/types/unreachable.ts") || v.normalizedPath.startsWith("~lib/json-as/assembly/types/unreachable.ts"))) {
-            parser.parseFile(readFileSync("./assembly/types/unreachable.ts").toString(), "./assembly/types/unreachable.ts", false);
-        }
+        const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+        sources.forEach(v => console.log(v.normalizedPath));
+        console.log("Added source: assembly/types/exception.ts");
+        parser.parseFile(fs.readFileSync("./assembly/types/exception.ts").toString(), "./assembly/types/exception.ts", false);
+        console.log("Added source: assembly/types/unreachable.ts");
+        parser.parseFile(fs.readFileSync("./assembly/types/unreachable.ts").toString(), "./assembly/types/unreachable.ts", false);
+        console.log("Added source: assembly/types/abort.ts");
+        parser.parseFile(fs.readFileSync("./assembly/types/abort.ts").toString(), "./assembly/types/abort.ts", false);
         sources = parser.sources.sort((a, b) => {
             if (a.sourceKind >= 2 && b.sourceKind <= 1) {
                 return -1;

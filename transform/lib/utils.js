@@ -1,4 +1,5 @@
 import { Node } from "assemblyscript/dist/assemblyscript.js";
+import path from "path";
 export function replaceRef(node, replacement, ref) {
     if (!node || !ref)
         return;
@@ -196,5 +197,9 @@ export function hasOnlyCalls(statements) {
         }
         return true;
     });
+}
+export function removeExtension(filePath) {
+    const parsed = path.parse(filePath);
+    return path.join(parsed.dir, parsed.name);
 }
 //# sourceMappingURL=utils.js.map

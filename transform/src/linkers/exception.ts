@@ -16,7 +16,7 @@ import {
   IfStatement,
   Source,
 } from "assemblyscript/dist/assemblyscript.js";
-import { cloneNode, getFnName, hasBaseException, replaceAfter, replaceRef, stripExpr } from "../utils.js";
+import { cloneNode, getFnName, hasBaseException, removeExtension, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
 import { ImportStatement, ThrowStatement, TryStatement } from "types:assemblyscript/src/ast";
@@ -67,7 +67,7 @@ export class ExceptionLinker extends Visitor {
     if (reservedFns.includes(fnName)) return;
 
     if (fnName == "abort" || fnName == "unreachable") {
-      if (fnName == "abort") this.addImport(new Set<string>(["__AbortState"]), node.range.source); else this.addImport(new Set<string>(["__UnreachableState"]), node.range.source);
+      // if (fnName == "abort") this.addImport(new Set<string>(["__AbortState"]), node.range.source); else this.addImport(new Set<string>(["__UnreachableState"]), node.range.source);
 
       const newException = fnName == "abort" ?
         Node.createExpressionStatement(
@@ -174,7 +174,9 @@ export class ExceptionLinker extends Visitor {
         );
 
         if (!this.imports.has("__try_" + linkedFn.name.text)) node.range.source.statements.unshift(importStmt);
-        this.imports.add("__try_" + linkedFn.name.text)
+        this.imports.add("__try_" + linkedFn.name.text);
+
+        console.log("Import: " + toString(importStmt))
       }
 
       const overrideCall = Node.createExpressionStatement(
@@ -196,7 +198,7 @@ export class ExceptionLinker extends Visitor {
         : -1;
       // @ts-expect-error
       if (remainingStmts != -1 && remainingStmts < ref.length) {
-        this.addImport(new Set<string>(["__ExceptionState"]), node.range.source)
+        // this.addImport(new Set<string>(["__ExceptionState"]), node.range.source)
         const errorCheck = Node.createIfStatement(
           Node.createUnaryPrefixExpression(
             Token.Exclamation,
@@ -251,7 +253,7 @@ export class ExceptionLinker extends Visitor {
         // console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
         super.visit(overrideFn, ref);
         replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
-        // console.log(toString(linkedFn.range.source))
+        console.log(toString(linkedFn.range.source))
       }
 
       if (DEBUG) console.log("Link: " + toString(overrideCall));
@@ -262,7 +264,7 @@ export class ExceptionLinker extends Visitor {
     const value = node.value as NewExpression;
     if (value.kind != NodeKind.New || (value as NewExpression).typeName.identifier.text != "Error") throw new Error("__Exception handling only supports throwing Error classes");
 
-    this.addImport(new Set<string>(["__ErrorState"]), node.range.source);
+    // this.addImport(new Set<string>(["__ErrorState"]), node.range.source);
     const newThrow = Node.createExpressionStatement(
       Node.createCallExpression(
         Node.createPropertyAccessExpression(
@@ -392,52 +394,6 @@ export class ExceptionLinker extends Visitor {
     return breakStmt;
   }
 
-  addImport(imports: Set<string>, source: Source): void {
-    const sourcePath = path.resolve(process.cwd(), source.normalizedPath);
-
-    // __AbortState -> ./assembly/types/abort
-    // __ExceptionState -> ./assembly/types/exception
-    // __Exception -> ./assembly/types/exception
-    // __ErrorState -> ./assembly/types/error
-    // __UnreachableState -> ./assembly/types/unreachable
-
-    for (const imp of imports.values()) {
-      let path = "";
-
-      if (this.imports.has(imp)) continue;
-
-      if (imp == "__AbortState") {
-        path = calcPath(sourcePath, "abort");
-      } else if (imp == "__ExceptionState" || imp == "__Exception") {
-        path = calcPath(sourcePath, "exception");
-      } else if (imp == "__ErrorState") {
-        path = calcPath(sourcePath, "error");
-      } else if (imp == "__UnreachableState") {
-        path = calcPath(sourcePath, "unreachable");
-      } else {
-        continue;
-      }
-
-      const importStatement = Node.createImportStatement(
-        [
-          Node.createImportDeclaration(
-            Node.createIdentifierExpression(imp, source.range),
-            null,
-            source.range
-          )
-        ],
-        Node.createStringLiteralExpression(path, source.range),
-        source.range
-      );
-
-      source.statements.unshift(importStatement);
-
-      this.imports.add(imp);
-
-      if (DEBUG) console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
-    }
-  }
-
   static replace(node: Node | Node[]): void {
     const source = Array.isArray(node) ? node[0]?.range.source : node.range.source;
 
@@ -469,9 +425,4 @@ function calcPath(from: string, toName: string): string {
   }
 
   return relPath;
-}
-
-function removeExtension(filePath: string): string {
-  const parsed = path.parse(filePath);
-  return path.join(parsed.dir, parsed.name);
 }

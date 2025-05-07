@@ -31,10 +31,11 @@ export class FunctionData {
   constructor(node: FunctionDeclaration, ref: Node | Node[] | null, exported: boolean = false, path: Map<string, NamespaceDeclaration> = null) {
     this.node = node;
     this.ref = ref;
+    this.exported = exported;
     this.path = path;
   }
   clone(): FunctionData {
-    const fn = new FunctionData(this.node, this.ref, this.path);
+    const fn = new FunctionData(this.node, this.ref, this.exported, this.path);
     fn.linked = this.linked;
     fn.imported = this.imported;
     return fn;
@@ -217,25 +218,29 @@ export class FunctionLinker extends Visitor {
 
   static getFunction(fnName: Expression, path: string[] | null = null): FunctionData | null {
     const name = getFnName(fnName, path);
-    // console.log("Looking for: " + name);
+    if (name == "console.log") return null;
+    console.log("Looking for: " + name);
     const source = fnName.range.source;
     const sourceData = FunctionLinker.SN.sourceData.find(v => v.source.internalPath == source.internalPath);
     // if (!sourceData) console.log("Could not find source data");
     if (!sourceData) return null;
 
     const localFn = sourceData.fns.find((v) => {
+      console.log(v.node.name.text)
       return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
     });
-
+    // console.log("Local: " + localFn.node.name)
     if (localFn) return localFn;
 
-    // console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
+    console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
     for (const imported of sourceData.imports) {
-      // console.log(imported.source.internalPath + " " + imported.fns.length)
+      console.log(imported.source.internalPath + " " + imported.fns.length)
       let importedFn = imported.fns.find(v => {
+        console.log(v.node.name.text)
         return v.exported && name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
       });
       if (importedFn) {
+        console.log("Imported: " + importedFn.node.name.text)
         importedFn = importedFn.clone();
         importedFn.imported = true;
         return importedFn;

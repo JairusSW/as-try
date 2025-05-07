@@ -1,6 +1,6 @@
 import { Visitor } from "../lib/visitor.js";
 import { Node, } from "assemblyscript/dist/assemblyscript.js";
-import { cloneNode, getFnName, replaceAfter, replaceRef, stripExpr } from "../utils.js";
+import { cloneNode, getFnName, removeExtension, replaceAfter, replaceRef, stripExpr } from "../utils.js";
 import { FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
 import { fileURLToPath } from "node:url";
@@ -38,10 +38,6 @@ export class ExceptionLinker extends Visitor {
         if (reservedFns.includes(fnName))
             return;
         if (fnName == "abort" || fnName == "unreachable") {
-            if (fnName == "abort")
-                this.addImport(new Set(["__AbortState"]), node.range.source);
-            else
-                this.addImport(new Set(["__UnreachableState"]), node.range.source);
             const newException = fnName == "abort" ?
                 Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__AbortState", node.range), Node.createIdentifierExpression("abort", node.range), node.range), null, node.args, node.range)) : Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__UnreachableState", node.range), Node.createIdentifierExpression("unreachable", node.range), node.range), null, node.args, node.range));
             const breakerStmt = this.getBreaker(node, this.fn);
@@ -84,6 +80,7 @@ export class ExceptionLinker extends Visitor {
                 if (!this.imports.has("__try_" + linkedFn.name.text))
                     node.range.source.statements.unshift(importStmt);
                 this.imports.add("__try_" + linkedFn.name.text);
+                console.log("Import: " + toString(importStmt));
             }
             const overrideCall = Node.createExpressionStatement(Node.createCallExpression(linked.path ?
                 SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
@@ -92,7 +89,6 @@ export class ExceptionLinker extends Visitor {
                 ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
                 : -1;
             if (remainingStmts != -1 && remainingStmts < ref.length) {
-                this.addImport(new Set(["__ExceptionState"]), node.range.source);
                 const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
                 super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
                 replaceAfter(node, [overrideCall, errorCheck], ref);
@@ -109,6 +105,7 @@ export class ExceptionLinker extends Visitor {
                 this.fn = lastFn;
                 super.visit(overrideFn, ref);
                 replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
+                console.log(toString(linkedFn.range.source));
             }
             if (DEBUG)
                 console.log("Link: " + toString(overrideCall));
@@ -119,7 +116,6 @@ export class ExceptionLinker extends Visitor {
         const value = node.value;
         if (value.kind != 17 || value.typeName.identifier.text != "Error")
             throw new Error("__Exception handling only supports throwing Error classes");
-        this.addImport(new Set(["__ErrorState"]), node.range.source);
         const newThrow = Node.createExpressionStatement(Node.createCallExpression(Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ErrorState", node.range), Node.createIdentifierExpression("error", node.range), node.range), null, value.args, node.range));
         console.log("Fn (Throw): " + toString(this.fn));
         const breaker = this.getBreaker(node, this.fn);
@@ -162,36 +158,6 @@ export class ExceptionLinker extends Visitor {
             console.log("Return: " + toString(breakStmt));
         return breakStmt;
     }
-    addImport(imports, source) {
-        const sourcePath = path.resolve(process.cwd(), source.normalizedPath);
-        for (const imp of imports.values()) {
-            let path = "";
-            if (this.imports.has(imp))
-                continue;
-            if (imp == "__AbortState") {
-                path = calcPath(sourcePath, "abort");
-            }
-            else if (imp == "__ExceptionState" || imp == "__Exception") {
-                path = calcPath(sourcePath, "exception");
-            }
-            else if (imp == "__ErrorState") {
-                path = calcPath(sourcePath, "error");
-            }
-            else if (imp == "__UnreachableState") {
-                path = calcPath(sourcePath, "unreachable");
-            }
-            else {
-                continue;
-            }
-            const importStatement = Node.createImportStatement([
-                Node.createImportDeclaration(Node.createIdentifierExpression(imp, source.range), null, source.range)
-            ], Node.createStringLiteralExpression(path, source.range), source.range);
-            source.statements.unshift(importStatement);
-            this.imports.add(imp);
-            if (DEBUG)
-                console.log("Import: " + toString(importStatement) + " in " + source.normalizedPath);
-        }
-    }
     static replace(node) {
         const source = Array.isArray(node) ? node[0]?.range.source : node.range.source;
         ExceptionLinker.SN.fn = null;
@@ -212,9 +178,5 @@ function calcPath(from, toName) {
         relPath = "./" + relPath;
     }
     return relPath;
-}
-function removeExtension(filePath) {
-    const parsed = path.parse(filePath);
-    return path.join(parsed.dir, parsed.name);
 }
 //# sourceMappingURL=exception.js.map

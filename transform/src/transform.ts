@@ -3,16 +3,23 @@ import {
   CommonFlags,
   DoStatement,
   FunctionDeclaration,
+  IdentifierExpression,
   IfStatement,
   Node,
+  NodeKind,
+  PropertyAccessExpression,
   Source,
   Token,
   TryStatement,
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "./lib/visitor.js";
 import { toString } from "./lib/util.js";
-import { hasOnlyCalls, replaceRef } from "./utils.js";
+import { hasOnlyCalls, removeExtension, replaceRef } from "./utils.js";
 import { ExceptionLinker } from "./linkers/exception.js";
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
+import { CallExpression, ThrowStatement } from "types:assemblyscript/src/ast";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -25,7 +32,10 @@ export class TryTransform extends Visitor {
   public foundExceptions: Node[] = [];
   public overrideFns: FunctionDeclaration[] = [];
   public baseStatements: Node[] = [];
+
+  public foundTry: boolean = false;
   visitTryStatement(node: TryStatement, ref?: Node | Node[] | null): void {
+    this.foundTry = true;
     this.baseStatements = node.bodyStatements;
     if (DEBUG) console.log("Found try: " + toString(node));
     this.foundExceptions = [];
@@ -68,7 +78,7 @@ export class TryTransform extends Visitor {
     if (DEBUG) console.log("Try Block/Loop: " + toString(tryBlock));
 
     if (node.catchStatements?.length) {
-      ExceptionLinker.SN.addImport(new Set<string>(["__ExceptionState", "__Exception"]), node.range.source);
+      // ExceptionLinker.SN.addImport(new Set<string>(["__ExceptionState", "__Exception"]), node.range.source);
 
       const catchVar = Node.createVariableStatement(
         null,
@@ -125,8 +135,90 @@ export class TryTransform extends Visitor {
     replaceRef(node, [tryBlock, catchBlock, finallyBlock].filter(v => v != null), ref);
     super.visit([tryBlock, catchBlock, finallyBlock]);
   }
+  visitThrowStatement(node: ThrowStatement, ref?: Node | Node[] | null): void {
+    this.foundTry = true;
+    super.visitThrowStatement(node, ref);
+  }
+  visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
+    const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
+    if (fnName == "abort" || fnName == "unreachable") this.foundTry = true;
+    super.visitCallExpression(node, ref);  
+  }
   visitSource(node: Source): void {
     super.visitSource(node);
+    if (this.foundTry) {
+      console.log("Found try: " + node.normalizedPath)
+      this.foundTry = false;
+      this.addImport(["__AbortState", "__Exception", "__ExceptionState", "__ErrorState", "__UnreachableState"], node);
+    }
     // if (DEBUG) console.log("Source: " + toString(node));
+  }
+  addImport(imports: string[], source: Source): void {
+    const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+    const pkgPath = path.join(baseDir, "node_modules");
+    let fromPath = source.normalizedPath;
+    let toPath = path.join(baseDir, "assembly", "types");
+
+    fromPath = fromPath.startsWith("~lib/")
+      ?
+      fs.existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
+        ? path.join(pkgPath, fromPath.slice(5))
+        : fromPath
+      :
+      path.join(baseDir, fromPath);
+
+
+    // console.log("from: " + fromPath);
+    // console.log("to: " + toPath);
+    // console.log("base: " + baseDir);
+    // console.log("pkg: " + pkgPath);
+
+    // console.log("rel path: " + relPath)
+
+    for (const i of imports) {
+      let file = "";
+      if (i == "__AbortState") {
+        file = "abort";
+      } else if (i == "__ExceptionState" || i == "__Exception") {
+        file = "exception";
+      } else if (i == "__ErrorState") {
+        file = "error";
+      } else if (i == "__UnreachableState") {
+        file = "unreachable";
+      } else {
+        continue;
+      }
+
+      let relPath = removeExtension(path.posix.join(
+        ...(path.relative(
+          path.dirname(fromPath),
+          path.join(toPath, file)
+        ).split(path.sep))
+      ));
+
+      if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+        relPath = "./" + relPath;
+      }
+
+      const importStmt = Node.createImportStatement([
+        Node.createImportDeclaration(
+          Node.createIdentifierExpression(
+            i,
+            source.range
+          ),
+          null,
+          source.range
+        )
+      ],
+        Node.createStringLiteralExpression(
+          relPath,
+          source.range
+        ),
+        source.range
+      );
+
+      source.statements.unshift(importStmt);
+      if (DEBUG) console.log("Import: " + toString(importStmt))
+    }
   }
 }

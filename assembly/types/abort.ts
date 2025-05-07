@@ -14,7 +14,7 @@ export namespace __AbortState {
     __AbortState.columnNumber = -1;
   }
   // @ts-ignore: inline
-  export function abort(msg: string | null = null, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
+  @inline export function abort(msg: string | null = null, fileName: string | null = null, lineNumber: i32 = 0, columnNumber: i32 = 0): void {
     __ExceptionState.Failed = true;
     __ExceptionState.Type = __ExceptionType.Abort;
 
