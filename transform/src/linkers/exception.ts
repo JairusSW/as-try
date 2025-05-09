@@ -14,12 +14,12 @@ import {
   NewExpression,
   PropertyAccessExpression,
   IfStatement,
-  Source,
+  ThrowStatement,
+  Program
 } from "assemblyscript/dist/assemblyscript.js";
 import {
   cloneNode,
   getFnName,
-  hasBaseException,
   removeExtension,
   replaceAfter,
   replaceRef,
@@ -27,11 +27,6 @@ import {
 } from "../utils.js";
 import { FunctionData, FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
-import {
-  ImportStatement,
-  ThrowStatement,
-  TryStatement,
-} from "types:assemblyscript/src/ast";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -57,6 +52,9 @@ export class ExceptionParent {
 
 export class ExceptionLinker extends Visitor {
   static SN: ExceptionLinker = new ExceptionLinker();
+
+  public program!: Program;
+  public baseDir!: string;
 
   public changed: boolean = false;
   public fn: FunctionDeclaration | null = null;
@@ -87,32 +85,32 @@ export class ExceptionLinker extends Visitor {
       const newException =
         fnName == "abort"
           ? Node.createExpressionStatement(
-              Node.createCallExpression(
-                Node.createPropertyAccessExpression(
-                  Node.createIdentifierExpression("__AbortState", node.range),
-                  Node.createIdentifierExpression("abort", node.range),
-                  node.range,
-                ),
-                null,
-                node.args,
+            Node.createCallExpression(
+              Node.createPropertyAccessExpression(
+                Node.createIdentifierExpression("__AbortState", node.range),
+                Node.createIdentifierExpression("abort", node.range),
                 node.range,
               ),
-            )
+              null,
+              node.args,
+              node.range,
+            ),
+          )
           : Node.createExpressionStatement(
-              Node.createCallExpression(
-                Node.createPropertyAccessExpression(
-                  Node.createIdentifierExpression(
-                    "__UnreachableState",
-                    node.range,
-                  ),
-                  Node.createIdentifierExpression("unreachable", node.range),
+            Node.createCallExpression(
+              Node.createPropertyAccessExpression(
+                Node.createIdentifierExpression(
+                  "__UnreachableState",
                   node.range,
                 ),
-                null,
-                node.args,
+                Node.createIdentifierExpression("unreachable", node.range),
                 node.range,
               ),
-            );
+              null,
+              node.args,
+              node.range,
+            ),
+          );
 
       const breakerStmt = this.getBreaker(node, this.fn);
 
@@ -135,37 +133,31 @@ export class ExceptionLinker extends Visitor {
       // }
 
       if (linked.imported && !linked.path) {
-        const baseDir = path.resolve(
-          fileURLToPath(import.meta.url),
-          "..",
-          "..",
-          "..",
-          "..",
-        );
+        const baseDir = path.join(process.cwd(), this.baseDir);
         const pkgPath = path.join(baseDir, "node_modules");
         let fromPath = node.range.source.normalizedPath;
         let toPath = linkedFn.range.source.normalizedPath;
 
         toPath = toPath.startsWith("~lib/")
           ? existsSync(
-              path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))),
-            )
+            path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))),
+          )
             ? path.join(pkgPath, toPath.slice(5))
             : toPath
           : path.join(baseDir, toPath);
 
         fromPath = fromPath.startsWith("~lib/")
           ? existsSync(
-              path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
-            )
+            path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
+          )
             ? path.join(pkgPath, fromPath.slice(5))
             : fromPath
           : path.join(baseDir, fromPath);
 
-        // console.log("from: " + fromPath);
-        // console.log("to: " + toPath);
-        // console.log("base: " + baseDir);
-        // console.log("pkg: " + pkgPath);
+        console.log("from: " + fromPath);
+        console.log("to: " + toPath);
+        console.log("base: " + baseDir);
+        console.log("pkg: " + pkgPath);
 
         let relPath = removeExtension(
           path.posix.join(
@@ -202,22 +194,22 @@ export class ExceptionLinker extends Visitor {
           node.range.source.statements.unshift(importStmt);
         this.imports.add("__try_" + linkedFn.name.text);
 
-        if (DEBUG) console.log("Import: " + toString(importStmt));
+        if (DEBUG) console.log("Import (call): " + toString(importStmt) + " at " + node.range.source.internalPath);
       }
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
           linked.path
             ? SimpleParser.parseExpression(
-                getFnName(
-                  "__try_" + linkedFn.name.text,
-                  linked.path ? Array.from(linked.path.keys()) : null,
-                ),
-              )
-            : Node.createIdentifierExpression(
-                getFnName("__try_" + linkedFn.name.text),
-                node.expression.range,
+              getFnName(
+                "__try_" + linkedFn.name.text,
+                linked.path ? Array.from(linked.path.keys()) : null,
               ),
+            )
+            : Node.createIdentifierExpression(
+              getFnName("__try_" + linkedFn.name.text),
+              node.expression.range,
+            ),
           node.typeArguments,
           node.args,
           node.range,

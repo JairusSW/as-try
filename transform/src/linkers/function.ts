@@ -10,6 +10,7 @@ import {
   ImportStatement,
   MethodDeclaration,
   CommonFlags,
+  Program,
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
@@ -64,17 +65,20 @@ export class SourceData {
 
 export class FunctionLinkerState {
   public path: Map<string, NamespaceDeclaration | ClassDeclaration>;
+  public foundException: boolean = false;
   public sourceData: SourceData[];
   public sD: SourceData;
   public visitedSources: Set<string>;
   constructor(
     path: Map<string, NamespaceDeclaration | ClassDeclaration>,
+    foundException: boolean,
     sourceData: SourceData[],
     sD: SourceData,
     visitedSources: Set<string>,
   ) {
     this.path = path;
     this.sourceData = sourceData;
+    this.foundException = foundException;
     this.sD = sD;
     this.visitedSources = visitedSources;
   }
@@ -83,7 +87,6 @@ export class FunctionLinkerState {
 export class FunctionLinker extends Visitor {
   static SN: FunctionLinker = new FunctionLinker();
 
-  public i: boolean = false;
   public path: Map<string, NamespaceDeclaration | ClassDeclaration> = new Map();
   public foundException: boolean = false;
   public sources: Source[] = [];
@@ -228,6 +231,7 @@ export class FunctionLinker extends Visitor {
   saveState(o: FunctionLinker = this): FunctionLinkerState {
     return new FunctionLinkerState(
       this.path,
+      this.foundException,
       this.sourceData,
       this.sD,
       this.visitedSources,
@@ -236,6 +240,7 @@ export class FunctionLinker extends Visitor {
 
   restoreState(state: FunctionLinkerState, o: FunctionLinker = this): void {
     o.path = state.path;
+    o.foundException = state.foundException;
     o.sourceData = state.sourceData;
     o.sD = state.sD;
     o.visitedSources = state.visitedSources;
@@ -244,11 +249,6 @@ export class FunctionLinker extends Visitor {
   static visitSources(sources: Source[]): void {
     FunctionLinker.SN.sources = sources;
     for (const source of sources) {
-      if (source.internalPath.startsWith("~lib/rt")) continue;
-      if (source.internalPath.startsWith("~lib/performance")) continue;
-      if (source.internalPath.startsWith("~lib/wasi_")) continue;
-      if (source.internalPath.startsWith("~lib/shared/")) continue;
-      if (source.internalPath.startsWith("~lib/performance")) continue;
       // console.log("Linker Visiting: " + source.internalPath);
       FunctionLinker.SN.visitSource(source);
     }

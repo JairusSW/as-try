@@ -6,6 +6,7 @@ import { isStdlib } from "./lib/util.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
+import { ExceptionLinker } from "./linkers/exception.js";
 
 export default class Transformer extends Transform {
   afterParse(parser: Parser): void {
@@ -21,8 +22,7 @@ export default class Transformer extends Transform {
 
     // console.log("Base Dir: " + baseDir);
 
-    const isLib = path.dirname(baseDir);
-    // console.log("isLib: " + isLib)
+    const isLib = path.dirname(baseDir).endsWith("node_modules");
 
     if (
       !isLib &&
@@ -130,10 +130,15 @@ export default class Transformer extends Transform {
           return 0;
         }
       });
+    
+    ExceptionLinker.SN.program = this.program;
+    ExceptionLinker.SN.baseDir = this.baseDir;
 
     FunctionLinker.visitSources(sources);
 
     const transformer = new TryTransform();
+    transformer.program = this.program;
+    transformer.baseDir = this.baseDir;
 
     for (const source of sources) {
       transformer.visit(source);
