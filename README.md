@@ -52,11 +52,10 @@ If you'd like to see the code that the transform generates, run the build step w
 
 ## 🪄 Usage
 
-This library does all the work behind-the-scenes, so you, the developer, can use the classic `try/catch/finalize` syntax with no changes!
+This library does all the work behind-the-scenes, so you, the developer, can use the classic `try/catch/finally` syntax with no changes!
 
 ```js
 try {
-  // Do something
   abort("Failed to execute!", "test.ts");
   console.log("This should not execute");
 } catch (e) {

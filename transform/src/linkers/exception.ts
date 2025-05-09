@@ -253,7 +253,7 @@ export class ExceptionLinker extends Visitor {
         // console.log("Visit Override Fn: " + "__try_" + linkedFn.name.text);
         super.visit(overrideFn, ref);
         replaceRef(linkedFn, [linkedFn, overrideFn], linked.ref);
-        console.log(toString(linkedFn.range.source))
+        // console.log(toString(linkedFn.range.source))
       }
 
       if (DEBUG) console.log("Link: " + toString(overrideCall));
@@ -278,9 +278,9 @@ export class ExceptionLinker extends Visitor {
       ),
     );
 
-    console.log("Fn (Throw): " + toString(this.fn));
+    // console.log("Fn (Throw): " + toString(this.fn));
     const breaker = this.getBreaker(node, this.fn);
-    console.log("Breaker (Throw): " + toString(breaker));
+    // console.log("Breaker (Throw): " + toString(breaker));
     if (!Array.isArray(ref))
       replaceRef(
         node,

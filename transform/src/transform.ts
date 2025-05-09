@@ -147,7 +147,7 @@ export class TryTransform extends Visitor {
   visitSource(node: Source): void {
     super.visitSource(node);
     if (this.foundTry) {
-      console.log("Found try: " + node.normalizedPath)
+      // console.log("Found try: " + node.normalizedPath)
       this.foundTry = false;
       this.addImport(["__AbortState", "__Exception", "__ExceptionState", "__ErrorState", "__UnreachableState"], node);
     }
@@ -159,7 +159,7 @@ export class TryTransform extends Visitor {
     let fromPath = source.normalizedPath;
     let toPath = path.join(baseDir, "assembly", "types");
 
-    console.log("exists: " + path.join(process.cwd(), fromPath));
+    // console.log("exists: " + path.join(process.cwd(), fromPath));
     fromPath = fromPath.startsWith("~lib/")
       ?
       fs.existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))

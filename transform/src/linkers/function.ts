@@ -226,21 +226,21 @@ export class FunctionLinker extends Visitor {
     if (!sourceData) return null;
 
     const localFn = sourceData.fns.find((v) => {
-      console.log(v.node.name.text)
+      // console.log(v.node.name.text)
       return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
     });
     // console.log("Local: " + localFn.node.name)
     if (localFn) return localFn;
 
-    console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
+    // console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
     for (const imported of sourceData.imports) {
-      console.log(imported.source.internalPath + " " + imported.fns.length)
+      // console.log(imported.source.internalPath + " " + imported.fns.length)
       let importedFn = imported.fns.find(v => {
-        console.log(v.node.name.text)
+        // console.log(v.node.name.text)
         return v.exported && name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
       });
       if (importedFn) {
-        console.log("Imported: " + importedFn.node.name.text)
+        // console.log("Imported: " + importedFn.node.name.text)
         importedFn = importedFn.clone();
         importedFn.imported = true;
         return importedFn;
