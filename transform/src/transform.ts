@@ -1,5 +1,6 @@
 import {
   BlockStatement,
+  CallExpression,
   CommonFlags,
   DoStatement,
   FunctionDeclaration,
@@ -7,8 +8,10 @@ import {
   IfStatement,
   Node,
   NodeKind,
+  Program,
   PropertyAccessExpression,
   Source,
+  ThrowStatement,
   Token,
   TryStatement,
 } from "assemblyscript/dist/assemblyscript.js";
@@ -19,7 +22,6 @@ import { ExceptionLinker } from "./linkers/exception.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
-import { CallExpression, ThrowStatement } from "types:assemblyscript/src/ast";
 
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
@@ -28,6 +30,9 @@ const DEBUG = process.env["DEBUG"]
   : false;
 
 export class TryTransform extends Visitor {
+  public program!: Program;
+  public baseDir!: string;
+
   public searching: boolean = false;
   public foundExceptions: Node[] = [];
   public overrideFns: FunctionDeclaration[] = [];
@@ -179,7 +184,7 @@ export class TryTransform extends Visitor {
       "..",
       "..",
     );
-    const pkgPath = path.join(process.cwd(), "node_modules");
+    const pkgPath = path.join(process.cwd(), this.baseDir, "node_modules");
     let fromPath = source.normalizedPath;
     let toPath = path.join(baseDir, "assembly", "types");
 
@@ -248,7 +253,7 @@ export class TryTransform extends Visitor {
       );
 
       source.statements.unshift(importStmt);
-      if (DEBUG) console.log("Import: " + toString(importStmt));
+      if (DEBUG) console.log("Import: " + toString(importStmt) + " at " + source.internalPath);
     }
   }
 }
