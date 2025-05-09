@@ -28,7 +28,12 @@ export class FunctionData {
   public exported: boolean = false;
   public imported: boolean = false;
 
-  constructor(node: FunctionDeclaration, ref: Node | Node[] | null, exported: boolean = false, path: Map<string, NamespaceDeclaration> = null) {
+  constructor(
+    node: FunctionDeclaration,
+    ref: Node | Node[] | null,
+    exported: boolean = false,
+    path: Map<string, NamespaceDeclaration> = null,
+  ) {
     this.node = node;
     this.ref = ref;
     this.exported = exported;
@@ -46,7 +51,11 @@ export class SourceData {
   public source: Source;
   public fns: FunctionData[];
   public imports: SourceData[];
-  constructor(source: Source, fns: FunctionData[] = [], imports: SourceData[] = []) {
+  constructor(
+    source: Source,
+    fns: FunctionData[] = [],
+    imports: SourceData[] = [],
+  ) {
     this.source = source;
     this.fns = fns;
     this.imports = imports;
@@ -62,11 +71,11 @@ export class FunctionLinkerState {
     path: Map<string, NamespaceDeclaration | ClassDeclaration>,
     sourceData: SourceData[],
     sD: SourceData,
-    visitedSources: Set<string>
+    visitedSources: Set<string>,
   ) {
     this.path = path;
     this.sourceData = sourceData;
-    this.sD = sD
+    this.sD = sD;
     this.visitedSources = visitedSources;
   }
 }
@@ -84,12 +93,15 @@ export class FunctionLinker extends Visitor {
 
   private visitedSources: Set<string> = new Set<string>();
 
-  visitImportStatement(node: ImportStatement, ref?: Node | Node[] | null): void {
+  visitImportStatement(
+    node: ImportStatement,
+    ref?: Node | Node[] | null,
+  ): void {
     const path = node.internalPath;
     const pathSource =
-      this.sources.find(v => v.internalPath == path) ||
-      this.sources.find(v => v.internalPath == path + "/assembly/index") ||
-      this.sources.find(v => v.internalPath == path + "/index");
+      this.sources.find((v) => v.internalPath == path) ||
+      this.sources.find((v) => v.internalPath == path + "/assembly/index") ||
+      this.sources.find((v) => v.internalPath == path + "/index");
 
     if (!pathSource) return;
 
@@ -105,19 +117,43 @@ export class FunctionLinker extends Visitor {
     super.visitFunctionDeclaration(node, isDefault, ref);
 
     if (this.foundException) {
-      const path = this.path.size ? new Map<string, NamespaceDeclaration | ClassDeclaration>(this.path.entries()) : null;
-      this.sD.fns.push(new FunctionData(node, ref, (node.flags & CommonFlags.Export) ? true : false, path));
-      if (DEBUG) console.log("Added Function: " + node.name.text + " in " + node.range.source.internalPath);
+      const path = this.path.size
+        ? new Map<string, NamespaceDeclaration | ClassDeclaration>(
+            this.path.entries(),
+          )
+        : null;
+      this.sD.fns.push(
+        new FunctionData(
+          node,
+          ref,
+          node.flags & CommonFlags.Export ? true : false,
+          path,
+        ),
+      );
+      if (DEBUG)
+        console.log(
+          "Added Function: " +
+            node.name.text +
+            " in " +
+            node.range.source.internalPath,
+        );
       this.foundException = false;
     }
   }
 
-  visitMethodDeclaration(node: MethodDeclaration, ref?: Node | Node[] | null): void {
+  visitMethodDeclaration(
+    node: MethodDeclaration,
+    ref?: Node | Node[] | null,
+  ): void {
     this.foundException = false;
     super.visitMethodDeclaration(node, ref);
 
     if (this.foundException) {
-      const path = this.path.size ? new Map<string, NamespaceDeclaration | ClassDeclaration>(this.path.entries()) : null;
+      const path = this.path.size
+        ? new Map<string, NamespaceDeclaration | ClassDeclaration>(
+            this.path.entries(),
+          )
+        : null;
       this.sD.fns.push(new FunctionData(node, ref, false, path)); // I should really check if the class is exported and if the method is public
     }
   }
@@ -149,7 +185,11 @@ export class FunctionLinker extends Visitor {
     this.path.delete(nsName);
   }
 
-  visitClassDeclaration(node: ClassDeclaration, isDefault?: boolean, ref?: Node | Node[] | null): void {
+  visitClassDeclaration(
+    node: ClassDeclaration,
+    isDefault?: boolean,
+    ref?: Node | Node[] | null,
+  ): void {
     this.path.set(node.name.text, node);
     super.visitClassDeclaration(node, isDefault, ref);
     this.path.delete(node.name.text);
@@ -168,7 +208,9 @@ export class FunctionLinker extends Visitor {
 
   analyzeSource(node: Source): SourceData {
     if (this.visitedSources.has(node.internalPath)) {
-      const foundSource = this.sourceData.find(v => v.source.internalPath == node.internalPath);
+      const foundSource = this.sourceData.find(
+        (v) => v.source.internalPath == node.internalPath,
+      );
       if (foundSource) return foundSource;
     }
 
@@ -184,7 +226,12 @@ export class FunctionLinker extends Visitor {
   }
 
   saveState(o: FunctionLinker = this): FunctionLinkerState {
-    return new FunctionLinkerState(this.path, this.sourceData, this.sD, this.visitedSources);
+    return new FunctionLinkerState(
+      this.path,
+      this.sourceData,
+      this.sD,
+      this.visitedSources,
+    );
   }
 
   restoreState(state: FunctionLinkerState, o: FunctionLinker = this): void {
@@ -216,18 +263,26 @@ export class FunctionLinker extends Visitor {
   //   return fn;
   // }
 
-  static getFunction(fnName: Expression, path: string[] | null = null): FunctionData | null {
+  static getFunction(
+    fnName: Expression,
+    path: string[] | null = null,
+  ): FunctionData | null {
     const name = getFnName(fnName, path);
     if (name == "console.log") return null;
-    console.log("Looking for: " + name);
+    if (DEBUG) console.log("Looking for: " + name);
     const source = fnName.range.source;
-    const sourceData = FunctionLinker.SN.sourceData.find(v => v.source.internalPath == source.internalPath);
+    const sourceData = FunctionLinker.SN.sourceData.find(
+      (v) => v.source.internalPath == source.internalPath,
+    );
     // if (!sourceData) console.log("Could not find source data");
     if (!sourceData) return null;
 
     const localFn = sourceData.fns.find((v) => {
       // console.log(v.node.name.text)
-      return name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
+      return (
+        name ==
+        getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null)
+      );
     });
     // console.log("Local: " + localFn.node.name)
     if (localFn) return localFn;
@@ -235,9 +290,13 @@ export class FunctionLinker extends Visitor {
     // console.log("Looking in imports: " + sourceData.imports.map(v => v.source.internalPath).join(" "))
     for (const imported of sourceData.imports) {
       // console.log(imported.source.internalPath + " " + imported.fns.length)
-      let importedFn = imported.fns.find(v => {
+      let importedFn = imported.fns.find((v) => {
         // console.log(v.node.name.text)
-        return v.exported && name == getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null);
+        return (
+          v.exported &&
+          name ==
+            getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null)
+        );
       });
       if (importedFn) {
         // console.log("Imported: " + importedFn.node.name.text)

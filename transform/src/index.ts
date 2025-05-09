@@ -9,10 +9,14 @@ import fs from "fs";
 
 export default class Transformer extends Transform {
   afterParse(parser: Parser): void {
-
     let sources = parser.sources;
 
-    const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+    const baseDir = path.resolve(
+      fileURLToPath(import.meta.url),
+      "..",
+      "..",
+      "..",
+    );
     // sources.forEach(v => console.log(v.normalizedPath));
 
     // console.log("Base Dir: " + baseDir);
@@ -20,29 +24,73 @@ export default class Transformer extends Transform {
     const isLib = path.dirname(baseDir);
     // console.log("isLib: " + isLib)
 
-    if (!isLib && !sources.some(v => v.normalizedPath.startsWith("assembly/types/exception.ts"))) {
+    if (
+      !isLib &&
+      !sources.some((v) =>
+        v.normalizedPath.startsWith("assembly/types/exception.ts"),
+      )
+    ) {
       const p = "./assembly/types/exception.ts";
       if (fs.existsSync(path.join(baseDir, p))) {
         // console.log("Added source: " + p);
-        parser.parseFile(fs.readFileSync(path.join(baseDir, p)).toString(), p, false);
+        parser.parseFile(
+          fs.readFileSync(path.join(baseDir, p)).toString(),
+          p,
+          false,
+        );
       }
     }
-    if (isLib && !sources.some(v => v.normalizedPath.startsWith("~lib/as-try/assembly/types/exception.ts"))) {
+    if (
+      isLib &&
+      !sources.some((v) =>
+        v.normalizedPath.startsWith("~lib/as-try/assembly/types/exception.ts"),
+      )
+    ) {
       // console.log("Added source: ~lib/as-try/assembly/types/exception.ts");
-      parser.parseFile(fs.readFileSync(path.join(baseDir, "assembly", "types", "exception.ts")).toString(), "~lib/as-try/assembly/types/exception.ts", false);
+      parser.parseFile(
+        fs
+          .readFileSync(path.join(baseDir, "assembly", "types", "exception.ts"))
+          .toString(),
+        "~lib/as-try/assembly/types/exception.ts",
+        false,
+      );
     }
 
-    if (!isLib && !sources.some(v => v.normalizedPath.startsWith("assembly/types/unreachable.ts"))) {
+    if (
+      !isLib &&
+      !sources.some((v) =>
+        v.normalizedPath.startsWith("assembly/types/unreachable.ts"),
+      )
+    ) {
       const p = "./assembly/types/unreachable.ts";
       if (fs.existsSync(path.join(baseDir, p))) {
         // console.log("Added source: " + p);
-        parser.parseFile(fs.readFileSync(path.join(baseDir, p)).toString(), p, false);
+        parser.parseFile(
+          fs.readFileSync(path.join(baseDir, p)).toString(),
+          p,
+          false,
+        );
       }
     }
 
-    if (isLib && !sources.some(v => v.normalizedPath.startsWith("~lib/as-try/assembly/types/unreachable.ts"))) {
+    if (
+      isLib &&
+      !sources.some((v) =>
+        v.normalizedPath.startsWith(
+          "~lib/as-try/assembly/types/unreachable.ts",
+        ),
+      )
+    ) {
       // console.log("Added source: ~lib/as-try/assembly/types/unreachable.ts");
-      parser.parseFile(fs.readFileSync(path.join(baseDir, "assembly", "types", "unreachable.ts")).toString(), "~lib/as-try/assembly/types/unreachable.ts", false);
+      parser.parseFile(
+        fs
+          .readFileSync(
+            path.join(baseDir, "assembly", "types", "unreachable.ts"),
+          )
+          .toString(),
+        "~lib/as-try/assembly/types/unreachable.ts",
+        false,
+      );
     }
 
     sources = parser.sources
@@ -68,15 +116,21 @@ export default class Transformer extends Transform {
         }
       })
       .sort((a, b) => {
-        if (a.sourceKind === SourceKind.UserEntry && b.sourceKind !== SourceKind.UserEntry) {
+        if (
+          a.sourceKind === SourceKind.UserEntry &&
+          b.sourceKind !== SourceKind.UserEntry
+        ) {
           return 1;
-        } else if (a.sourceKind !== SourceKind.UserEntry && b.sourceKind === SourceKind.UserEntry) {
+        } else if (
+          a.sourceKind !== SourceKind.UserEntry &&
+          b.sourceKind === SourceKind.UserEntry
+        ) {
           return -1;
         } else {
           return 0;
         }
       });
-    
+
     FunctionLinker.visitSources(sources);
 
     const transformer = new TryTransform();

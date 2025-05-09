@@ -16,20 +16,27 @@ import {
   IfStatement,
   Source,
 } from "assemblyscript/dist/assemblyscript.js";
-import { cloneNode, getFnName, hasBaseException, removeExtension, replaceAfter, replaceRef, stripExpr } from "../utils.js";
-import { FunctionLinker } from "./function.js";
+import {
+  cloneNode,
+  getFnName,
+  hasBaseException,
+  removeExtension,
+  replaceAfter,
+  replaceRef,
+  stripExpr,
+} from "../utils.js";
+import { FunctionData, FunctionLinker } from "./function.js";
 import { SimpleParser, toString } from "../lib/util.js";
-import { ImportStatement, ThrowStatement, TryStatement } from "types:assemblyscript/src/ast";
+import {
+  ImportStatement,
+  ThrowStatement,
+  TryStatement,
+} from "types:assemblyscript/src/ast";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { existsSync } from "node:fs";
 
-const reservedFns = [
-  "changetype",
-  "__new",
-  "__renew",
-  "__link"
-]
+const reservedFns = ["changetype", "__new", "__renew", "__link"];
 const DEBUG = process.env["DEBUG"]
   ? process.env["DEBUG"] == "true"
     ? true
@@ -39,7 +46,10 @@ const DEBUG = process.env["DEBUG"]
 export class ExceptionParent {
   public exception: CallExpression | ThrowStatement;
   public parent: FunctionDeclaration | DoStatement | null;
-  constructor(exception: CallExpression | ThrowStatement, parent: FunctionDeclaration | DoStatement | null = null) {
+  constructor(
+    exception: CallExpression | ThrowStatement,
+    parent: FunctionDeclaration | DoStatement | null = null,
+  ) {
     this.exception = exception;
     this.parent = parent;
   }
@@ -58,41 +68,51 @@ export class ExceptionLinker extends Visitor {
 
   public imports: Set<string> = new Set<string>();
 
+  public callStack: FunctionData[] = [];
+
   visitCallExpression(
     node: CallExpression,
     ref: Node | Node[] | null = null,
   ): void {
-    const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
+    const fnName =
+      node.expression.kind == NodeKind.Identifier
+        ? (node.expression as IdentifierExpression).text
+        : (node.expression as PropertyAccessExpression).property.text;
 
     if (reservedFns.includes(fnName)) return;
 
     if (fnName == "abort" || fnName == "unreachable") {
       // if (fnName == "abort") this.addImport(new Set<string>(["__AbortState"]), node.range.source); else this.addImport(new Set<string>(["__UnreachableState"]), node.range.source);
 
-      const newException = fnName == "abort" ?
-        Node.createExpressionStatement(
-          Node.createCallExpression(
-            Node.createPropertyAccessExpression(
-              Node.createIdentifierExpression("__AbortState", node.range),
-              Node.createIdentifierExpression("abort", node.range),
-              node.range,
-            ),
-            null,
-            node.args,
-            node.range,
-          ),
-        ) : Node.createExpressionStatement(
-          Node.createCallExpression(
-            Node.createPropertyAccessExpression(
-              Node.createIdentifierExpression("__UnreachableState", node.range),
-              Node.createIdentifierExpression("unreachable", node.range),
-              node.range,
-            ),
-            null,
-            node.args,
-            node.range,
-          ),
-        );
+      const newException =
+        fnName == "abort"
+          ? Node.createExpressionStatement(
+              Node.createCallExpression(
+                Node.createPropertyAccessExpression(
+                  Node.createIdentifierExpression("__AbortState", node.range),
+                  Node.createIdentifierExpression("abort", node.range),
+                  node.range,
+                ),
+                null,
+                node.args,
+                node.range,
+              ),
+            )
+          : Node.createExpressionStatement(
+              Node.createCallExpression(
+                Node.createPropertyAccessExpression(
+                  Node.createIdentifierExpression(
+                    "__UnreachableState",
+                    node.range,
+                  ),
+                  Node.createIdentifierExpression("unreachable", node.range),
+                  node.range,
+                ),
+                null,
+                node.args,
+                node.range,
+              ),
+            );
 
       const breakerStmt = this.getBreaker(node, this.fn);
 
@@ -115,78 +135,89 @@ export class ExceptionLinker extends Visitor {
       // }
 
       if (linked.imported && !linked.path) {
-
-        const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..", "..");
+        const baseDir = path.resolve(
+          fileURLToPath(import.meta.url),
+          "..",
+          "..",
+          "..",
+          "..",
+        );
         const pkgPath = path.join(baseDir, "node_modules");
         let fromPath = node.range.source.normalizedPath;
         let toPath = linkedFn.range.source.normalizedPath;
 
         toPath = toPath.startsWith("~lib/")
-          ?
-          existsSync(path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))))
+          ? existsSync(
+              path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))),
+            )
             ? path.join(pkgPath, toPath.slice(5))
             : toPath
-          :
-          path.join(baseDir, toPath);
+          : path.join(baseDir, toPath);
 
         fromPath = fromPath.startsWith("~lib/")
-          ?
-          existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
+          ? existsSync(
+              path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
+            )
             ? path.join(pkgPath, fromPath.slice(5))
             : fromPath
-          :
-          path.join(baseDir, fromPath);
-
+          : path.join(baseDir, fromPath);
 
         // console.log("from: " + fromPath);
         // console.log("to: " + toPath);
         // console.log("base: " + baseDir);
         // console.log("pkg: " + pkgPath);
 
-        let relPath = removeExtension(path.posix.join(
-          ...(path.relative(
-            path.dirname(fromPath),
-            toPath
-          ).split(path.sep))
-        ));
+        let relPath = removeExtension(
+          path.posix.join(
+            ...path.relative(path.dirname(fromPath), toPath).split(path.sep),
+          ),
+        );
 
-        if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+        if (
+          !relPath.startsWith(".") &&
+          !relPath.startsWith("/") &&
+          !relPath.startsWith("as-try")
+        ) {
           relPath = "./" + relPath;
         }
 
         // console.log("rel path: " + relPath)
 
-        const importStmt = Node.createImportStatement([
-          Node.createImportDeclaration(
-            Node.createIdentifierExpression(
-              "__try_" + linkedFn.name.text,
-              node.range
+        const importStmt = Node.createImportStatement(
+          [
+            Node.createImportDeclaration(
+              Node.createIdentifierExpression(
+                "__try_" + linkedFn.name.text,
+                node.range,
+              ),
+              null,
+              node.range,
             ),
-            null,
-            node.range
-          )
-        ],
-          Node.createStringLiteralExpression(
-            relPath,
-            node.range
-          ),
-          node.range
+          ],
+          Node.createStringLiteralExpression(relPath, node.range),
+          node.range,
         );
 
-        if (!this.imports.has("__try_" + linkedFn.name.text)) node.range.source.statements.unshift(importStmt);
+        if (!this.imports.has("__try_" + linkedFn.name.text))
+          node.range.source.statements.unshift(importStmt);
         this.imports.add("__try_" + linkedFn.name.text);
 
-        console.log("Import: " + toString(importStmt))
+        if (DEBUG) console.log("Import: " + toString(importStmt));
       }
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
-          linked.path ?
-            SimpleParser.parseExpression(getFnName("__try_" + linkedFn.name.text, linked.path ? Array.from(linked.path.keys()) : null))
+          linked.path
+            ? SimpleParser.parseExpression(
+                getFnName(
+                  "__try_" + linkedFn.name.text,
+                  linked.path ? Array.from(linked.path.keys()) : null,
+                ),
+              )
             : Node.createIdentifierExpression(
-              getFnName("__try_" + linkedFn.name.text),
-              node.expression.range,
-            ),
+                getFnName("__try_" + linkedFn.name.text),
+                node.expression.range,
+              ),
           node.typeArguments,
           node.args,
           node.range,
@@ -262,7 +293,13 @@ export class ExceptionLinker extends Visitor {
   }
   visitThrowStatement(node: ThrowStatement, ref?: Node | Node[] | null): void {
     const value = node.value as NewExpression;
-    if (value.kind != NodeKind.New || (value as NewExpression).typeName.identifier.text != "Error") throw new Error("__Exception handling only supports throwing Error classes");
+    if (
+      value.kind != NodeKind.New ||
+      (value as NewExpression).typeName.identifier.text != "Error"
+    )
+      throw new Error(
+        "__Exception handling only supports throwing Error classes",
+      );
 
     // this.addImport(new Set<string>(["__ErrorState"]), node.range.source);
     const newThrow = Node.createExpressionStatement(
@@ -294,22 +331,23 @@ export class ExceptionLinker extends Visitor {
     isDefault?: boolean,
     ref?: Node | Node[] | null,
   ): void {
-    console.log("Set Fn " + node.name.text);
+    // if (DEBUG) console.log("Set Fn " + node.name.text);
     const lastFn = this.fn;
     this.fn = node;
     super.visit(node.body, node);
-    console.log("Release Fn " + node.name.text)
+    // if (DEBUG) console.log("Release Fn " + node.name.text)
     this.fn = lastFn;
     super.visit(node.name, node);
     super.visit(node.decorators, node);
     super.visit(node.typeParameters, node);
     super.visit(node.signature, node);
   }
-  getBreaker(node: Node, parent: FunctionDeclaration | null = null): ReturnStatement | BreakStatement | IfStatement | null {
-    let breakStmt: ReturnStatement | BreakStatement | IfStatement | null = Node.createReturnStatement(
-      null,
-      node.range,
-    );
+  getBreaker(
+    node: Node,
+    parent: FunctionDeclaration | null = null,
+  ): ReturnStatement | BreakStatement | IfStatement | null {
+    let breakStmt: ReturnStatement | BreakStatement | IfStatement | null =
+      Node.createReturnStatement(null, node.range);
 
     if (!this.fn) {
       breakStmt = Node.createBreakStatement(null, node.range);
@@ -318,36 +356,39 @@ export class ExceptionLinker extends Visitor {
 
     if (parent) {
       const returnType = toString(parent.signature.returnType);
-      if (DEBUG) console.log("Return Type: " + returnType + " derived from " + parent.name.text);
+      if (DEBUG)
+        console.log(
+          "Return Type: " + returnType + " derived from " + parent.name.text,
+        );
       if (returnType != "void" && returnType != "never") {
         breakStmt = Node.createIfStatement(
           Node.createCallExpression(
             Node.createIdentifierExpression("isBoolean", node.range),
             [parent.signature.returnType],
             [],
-            node.range
+            node.range,
           ),
           Node.createReturnStatement(
             Node.createFalseExpression(node.range),
-            node.range
+            node.range,
           ),
           Node.createIfStatement(
             Node.createCallExpression(
               Node.createIdentifierExpression("isInteger", node.range),
               [parent.signature.returnType],
               [],
-              node.range
+              node.range,
             ),
             Node.createReturnStatement(
               Node.createIntegerLiteralExpression(i64_zero, node.range),
-              node.range
+              node.range,
             ),
             Node.createIfStatement(
               Node.createCallExpression(
                 Node.createIdentifierExpression("isFloat", node.range),
                 [parent.signature.returnType],
                 [],
-                node.range
+                node.range,
               ),
               Node.createFloatLiteralExpression(0, node.range),
               Node.createIfStatement(
@@ -357,33 +398,33 @@ export class ExceptionLinker extends Visitor {
                     Node.createIdentifierExpression("isManaged", node.range),
                     [parent.signature.returnType],
                     [],
-                    node.range
+                    node.range,
                   ),
                   Node.createCallExpression(
                     Node.createIdentifierExpression("isUnmanaged", node.range),
                     [parent.signature.returnType],
                     [],
-                    node.range
+                    node.range,
                   ),
-                  node.range
+                  node.range,
                 ),
                 Node.createReturnStatement(
                   Node.createCallExpression(
                     Node.createIdentifierExpression("changetype", node.range),
                     [parent.signature.returnType],
                     [Node.createIntegerLiteralExpression(i64_zero, node.range)],
-                    node.range
+                    node.range,
                   ),
-                  node.range
+                  node.range,
                 ),
                 Node.createReturnStatement(null, node.range),
-                node.range
+                node.range,
               ),
-              node.range
+              node.range,
             ),
-            node.range
+            node.range,
           ),
-          node.range
+          node.range,
         );
       } else {
         breakStmt = Node.createReturnStatement(null, node.range);
@@ -395,7 +436,9 @@ export class ExceptionLinker extends Visitor {
   }
 
   static replace(node: Node | Node[]): void {
-    const source = Array.isArray(node) ? node[0]?.range.source : node.range.source;
+    const source = Array.isArray(node)
+      ? node[0]?.range.source
+      : node.range.source;
 
     ExceptionLinker.SN.fn = null;
     ExceptionLinker.SN.currentSource = source;
@@ -413,14 +456,22 @@ function calcPath(from: string, toName: string): string {
   const thisFile = fileURLToPath(import.meta.url);
   const baseDir = path.resolve(thisFile, "..", "..", "..", "..");
 
-  let relPath = path.posix.join(
-    ...(path.relative(
-      path.dirname(from),
-      path.join(baseDir, "assembly", "types", toName)
-    ).split(path.sep))
-  ).replace(/^.*node_modules\/as-try/, "as-try");
+  let relPath = path.posix
+    .join(
+      ...path
+        .relative(
+          path.dirname(from),
+          path.join(baseDir, "assembly", "types", toName),
+        )
+        .split(path.sep),
+    )
+    .replace(/^.*node_modules\/as-try/, "as-try");
 
-  if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+  if (
+    !relPath.startsWith(".") &&
+    !relPath.startsWith("/") &&
+    !relPath.startsWith("as-try")
+  ) {
     relPath = "./" + relPath;
   }
 

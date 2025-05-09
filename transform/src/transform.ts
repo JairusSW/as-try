@@ -61,17 +61,17 @@ export class TryTransform extends Visitor {
 
     tryBlock = hasOnlyCalls(node.bodyStatements)
       ? Node.createBlockStatement(
-        [beforeTry, ...node.bodyStatements],
-        node.range
-      )
-      : Node.createDoStatement(
-        Node.createBlockStatement(
           [beforeTry, ...node.bodyStatements],
-          node.range
-        ),
-        Node.createFalseExpression(node.range),
-        node.range
-      );
+          node.range,
+        )
+      : Node.createDoStatement(
+          Node.createBlockStatement(
+            [beforeTry, ...node.bodyStatements],
+            node.range,
+          ),
+          Node.createFalseExpression(node.range),
+          node.range,
+        );
 
     ExceptionLinker.replace(tryBlock);
 
@@ -93,7 +93,10 @@ export class TryTransform extends Visitor {
               null,
               [
                 Node.createPropertyAccessExpression(
-                  Node.createIdentifierExpression("__ExceptionState", node.range),
+                  Node.createIdentifierExpression(
+                    "__ExceptionState",
+                    node.range,
+                  ),
                   Node.createIdentifierExpression("Type", node.range),
                   node.range,
                 ),
@@ -114,10 +117,10 @@ export class TryTransform extends Visitor {
         ),
         Node.createBlockStatement(
           [catchVar, ...node.catchStatements, beforeTry],
-          node.range
+          node.range,
         ),
         null,
-        node.range
+        node.range,
       );
 
       if (DEBUG) console.log("Catch Block: " + toString(catchBlock));
@@ -126,13 +129,17 @@ export class TryTransform extends Visitor {
     if (node.finallyStatements) {
       finallyBlock = Node.createBlockStatement(
         node.finallyStatements,
-        node.range
+        node.range,
       );
 
       if (DEBUG) console.log("Finally Block: " + toString(finallyBlock));
     }
 
-    replaceRef(node, [tryBlock, catchBlock, finallyBlock].filter(v => v != null), ref);
+    replaceRef(
+      node,
+      [tryBlock, catchBlock, finallyBlock].filter((v) => v != null),
+      ref,
+    );
     super.visit([tryBlock, catchBlock, finallyBlock]);
   }
   visitThrowStatement(node: ThrowStatement, ref?: Node | Node[] | null): void {
@@ -140,7 +147,10 @@ export class TryTransform extends Visitor {
     super.visitThrowStatement(node, ref);
   }
   visitCallExpression(node: CallExpression, ref?: Node | Node[] | null): void {
-    const fnName = node.expression.kind == NodeKind.Identifier ? (node.expression as IdentifierExpression).text : (node.expression as PropertyAccessExpression).property.text;
+    const fnName =
+      node.expression.kind == NodeKind.Identifier
+        ? (node.expression as IdentifierExpression).text
+        : (node.expression as PropertyAccessExpression).property.text;
     if (fnName == "abort" || fnName == "unreachable") this.foundTry = true;
     super.visitCallExpression(node, ref);
   }
@@ -149,32 +159,43 @@ export class TryTransform extends Visitor {
     if (this.foundTry) {
       // console.log("Found try: " + node.normalizedPath)
       this.foundTry = false;
-      this.addImport(["__AbortState", "__Exception", "__ExceptionState", "__ErrorState", "__UnreachableState"], node);
+      this.addImport(
+        [
+          "__AbortState",
+          "__Exception",
+          "__ExceptionState",
+          "__ErrorState",
+          "__UnreachableState",
+        ],
+        node,
+      );
     }
     // if (DEBUG) console.log("Source: " + toString(node));
   }
   addImport(imports: string[], source: Source): void {
-    const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+    const baseDir = path.resolve(
+      fileURLToPath(import.meta.url),
+      "..",
+      "..",
+      "..",
+    );
     const pkgPath = path.join(process.cwd(), "node_modules");
     let fromPath = source.normalizedPath;
     let toPath = path.join(baseDir, "assembly", "types");
 
     // console.log("exists: " + path.join(process.cwd(), fromPath));
     fromPath = fromPath.startsWith("~lib/")
-      ?
-      fs.existsSync(path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))))
+      ? fs.existsSync(
+          path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
+        )
         ? path.join(pkgPath, fromPath.slice(5))
         : fromPath
-      :
-      path.join(process.cwd(), fromPath);
-
-
+      : path.join(process.cwd(), fromPath);
 
     // console.log("from: " + fromPath);
     // console.log("to: " + toPath);
     // console.log("base: " + baseDir);
     // console.log("pkg: " + pkgPath);
-
 
     for (const i of imports) {
       let file = "";
@@ -190,39 +211,44 @@ export class TryTransform extends Visitor {
         continue;
       }
 
-      let relPath = removeExtension(path.posix.join(
-        ...(path.relative(
-          path.dirname(fromPath),
-          path.join(toPath, file)
-        ).split(path.sep))
-      ));
+      let relPath = removeExtension(
+        path.posix.join(
+          ...path
+            .relative(path.dirname(fromPath), path.join(toPath, file))
+            .split(path.sep),
+        ),
+      );
 
-      if (relPath.includes("node_modules" + path.sep + "as-try")) relPath = "as-try" + relPath.slice(relPath.indexOf("node_modules" + path.sep + "as-try") + 19);
+      if (relPath.includes("node_modules" + path.sep + "as-try"))
+        relPath =
+          "as-try" +
+          relPath.slice(
+            relPath.indexOf("node_modules" + path.sep + "as-try") + 19,
+          );
       // console.log("rel path: " + relPath)
 
-      if (!relPath.startsWith(".") && !relPath.startsWith("/") && !relPath.startsWith("as-try")) {
+      if (
+        !relPath.startsWith(".") &&
+        !relPath.startsWith("/") &&
+        !relPath.startsWith("as-try")
+      ) {
         relPath = "./" + relPath;
       }
 
-      const importStmt = Node.createImportStatement([
-        Node.createImportDeclaration(
-          Node.createIdentifierExpression(
-            i,
-            source.range
+      const importStmt = Node.createImportStatement(
+        [
+          Node.createImportDeclaration(
+            Node.createIdentifierExpression(i, source.range),
+            null,
+            source.range,
           ),
-          null,
-          source.range
-        )
-      ],
-        Node.createStringLiteralExpression(
-          relPath,
-          source.range
-        ),
-        source.range
+        ],
+        Node.createStringLiteralExpression(relPath, source.range),
+        source.range,
       );
 
       source.statements.unshift(importStmt);
-      if (DEBUG) console.log("Import: " + toString(importStmt))
+      if (DEBUG) console.log("Import: " + toString(importStmt));
     }
   }
 }

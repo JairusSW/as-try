@@ -1,14 +1,6 @@
-import {
-  __AbortState
-} from "./types/abort";
-import {
-  __ExceptionState,
-  __Exception
-} from "./types/exception";
-import {
-  describe,
-  expect
-} from "./__tests__/lib";
+import { __AbortState } from "./types/abort";
+import { __ExceptionState, __Exception } from "./types/exception";
+import { describe, expect } from "./__tests__/lib";
 
 describe("Should handle immediate abort call", () => {
   do {

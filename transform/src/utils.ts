@@ -1,4 +1,11 @@
-import { CallExpression, ExpressionStatement, Node, NodeKind, PropertyAccessExpression, Statement } from "assemblyscript/dist/assemblyscript.js";
+import {
+  CallExpression,
+  ExpressionStatement,
+  Node,
+  NodeKind,
+  PropertyAccessExpression,
+  Statement,
+} from "assemblyscript/dist/assemblyscript.js";
 import path from "path";
 import { IdentifierExpression } from "types:assemblyscript/src/ast";
 
@@ -131,17 +138,18 @@ export function isPrimitive(type: string): boolean {
 }
 
 export function blockify(node: Node): Node {
-  let block = node.kind == NodeKind.Block
-    ? node
-    : Node.createBlockStatement(
-      [node],
-      node.range
-    );
+  let block =
+    node.kind == NodeKind.Block
+      ? node
+      : Node.createBlockStatement([node], node.range);
 
   return block;
 }
 
-export function getFnName(expr: Node | string, path: string[] | null = null): string | null {
+export function getFnName(
+  expr: Node | string,
+  path: string[] | null = null,
+): string | null {
   const _path = path ? path.join(".") + "." : "";
   if (typeof expr == "string") {
     return _path + expr;
@@ -151,16 +159,22 @@ export function getFnName(expr: Node | string, path: string[] | null = null): st
     const prop = expr as PropertyAccessExpression;
     const left = getFnName(prop.expression, path);
     const right = prop.property.text;
-    return (left ? left + "." + right : right);
+    return left ? left + "." + right : right;
   }
   return null;
 }
 
-export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), path = ''): Node | Node[] | null {
-  if (input === null || typeof input !== 'object') return input;
+export function cloneNode(
+  input: Node | Node[] | null,
+  seen = new WeakMap(),
+  path = "",
+): Node | Node[] | null {
+  if (input === null || typeof input !== "object") return input;
 
   if (Array.isArray(input)) {
-    return input.map((item, index) => cloneNode(item, seen, `${path}[${index}]`)) as Node | Node[] | null;
+    return input.map((item, index) =>
+      cloneNode(item, seen, `${path}[${index}]`),
+    ) as Node | Node[] | null;
   }
 
   if (seen.has(input)) return seen.get(input);
@@ -173,9 +187,9 @@ export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), pat
     const value = input[key];
     const newPath = path ? `${path}.${String(key)}` : String(key);
 
-    if (newPath.endsWith('.source')) {
+    if (newPath.endsWith(".source")) {
       clone[key] = value;
-    } else if (value && typeof value === 'object') {
+    } else if (value && typeof value === "object") {
       clone[key] = cloneNode(value, seen, newPath);
     } else {
       clone[key] = value;
@@ -188,20 +202,21 @@ export function cloneNode(input: Node | Node[] | null, seen = new WeakMap(), pat
 export function hasBaseException(statements: Statement[]): boolean {
   return statements.some((v) => {
     if (!v) return false;
-    if (v.kind == NodeKind.Expression) v = (v as ExpressionStatement).expression;
+    if (v.kind == NodeKind.Expression)
+      v = (v as ExpressionStatement).expression;
     if (
       v.kind == NodeKind.Call &&
       (v as CallExpression).expression.kind == NodeKind.Identifier &&
-      (
-        ((v as CallExpression).expression as IdentifierExpression).text == "abort" ||
-        ((v as CallExpression).expression as IdentifierExpression).text == "unreachable"
-      )
-    ) return true;
+      (((v as CallExpression).expression as IdentifierExpression).text ==
+        "abort" ||
+        ((v as CallExpression).expression as IdentifierExpression).text ==
+          "unreachable")
+    )
+      return true;
     if (v.kind == NodeKind.Throw) return true;
     return false;
   });
 }
-
 
 export function hasOnlyCalls(statements: Statement[]): boolean {
   return statements.every((v) => {
@@ -217,10 +232,8 @@ export function hasOnlyCalls(statements: Statement[]): boolean {
 
     if (
       callExpr.expression.kind === NodeKind.Identifier &&
-      (
-        (callExpr.expression as IdentifierExpression).text === "abort" ||
-        (callExpr.expression as IdentifierExpression).text === "unreachable"
-      )
+      ((callExpr.expression as IdentifierExpression).text === "abort" ||
+        (callExpr.expression as IdentifierExpression).text === "unreachable")
     ) {
       return false;
     }

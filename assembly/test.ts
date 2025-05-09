@@ -11,7 +11,7 @@ function abortingFunction(): void {
 
 try {
   // Do something
-  foo()
+  foo();
   console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());
