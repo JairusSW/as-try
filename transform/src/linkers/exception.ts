@@ -154,10 +154,10 @@ export class ExceptionLinker extends Visitor {
             : fromPath
           : path.join(baseDir, fromPath);
 
-        console.log("from: " + fromPath);
-        console.log("to: " + toPath);
-        console.log("base: " + baseDir);
-        console.log("pkg: " + pkgPath);
+        // console.log("from: " + fromPath);
+        // console.log("to: " + toPath);
+        // console.log("base: " + baseDir);
+        // console.log("pkg: " + pkgPath);
 
         let relPath = removeExtension(
           path.posix.join(
@@ -220,7 +220,7 @@ export class ExceptionLinker extends Visitor {
         ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
         : -1;
       // @ts-expect-error
-      if (remainingStmts != -1 && remainingStmts < ref.length) {
+      if (!this.fn && remainingStmts != -1 && remainingStmts < ref.length) {
         // this.addImport(new Set<string>(["__ExceptionState"]), node.range.source)
         const errorCheck = Node.createIfStatement(
           Node.createUnaryPrefixExpression(
@@ -246,7 +246,26 @@ export class ExceptionLinker extends Visitor {
         );
         replaceAfter(node, [overrideCall, errorCheck], ref);
       } else {
-        replaceRef(node, overrideCall, ref);
+        
+        const breaker = this.getBreaker(node, this.fn);
+        const unrollStmt = Node.createIfStatement(
+          Node.createBinaryExpression(
+            Token.Equals_Equals,
+            Node.createPropertyAccessExpression(
+              Node.createIdentifierExpression("__ExceptionState", linkedFn.range),
+              Node.createIdentifierExpression("Failed", linkedFn.range),
+              linkedFn.range,
+            ),
+            Node.createTrueExpression(linkedFn.range),
+            linkedFn.range
+          ),
+          breaker,
+          null,
+          linkedFn.range
+        );
+
+        replaceRef(node, [overrideCall, unrollStmt], ref);
+        if (DEBUG) console.log("Unroll Check: " + toString(unrollStmt) + "\nin\n" + toString(ref));
       }
 
       if (!linked.linked) {
@@ -265,6 +284,7 @@ export class ExceptionLinker extends Visitor {
           linkedFn.arrowKind,
           linkedFn.range,
         );
+
         linked.linked = true;
         // console.log("Set Fn " + overrideFn.name.text);
         const lastFn = this.fn;

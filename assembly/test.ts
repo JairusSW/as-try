@@ -9,9 +9,15 @@ function abortingFunction(): void {
   abort("Aborted from abortingFunction");
 }
 
+function callFoo(): void {
+  foo();
+  console.log("this should never execute!")
+}
+
 try {
   // Do something
-  foo();
+  // foo();
+  callFoo();
   console.log("This should not execute");
 } catch (e) {
   console.log("Got an error: " + e.toString());

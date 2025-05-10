@@ -1,25 +1,28 @@
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
+import { CallLinker } from "./call.js";
 const DEBUG = process.env["DEBUG"]
     ? process.env["DEBUG"] == "true"
         ? true
         : false
     : false;
 export class FunctionData {
+    unroller;
     node;
     ref;
     linked = false;
     path;
     exported = false;
     imported = false;
-    constructor(node, ref, exported = false, path = null) {
+    constructor(node, ref, exported = false, hasBaseException = false, path = null) {
         this.node = node;
         this.ref = ref;
         this.exported = exported;
         this.path = path;
+        this.unroller = hasBaseException;
     }
     clone() {
-        const fn = new FunctionData(this.node, this.ref, this.exported, this.path);
+        const fn = new FunctionData(this.node, this.ref, this.exported, this.unroller, this.path);
         fn.linked = this.linked;
         fn.imported = this.imported;
         return fn;
@@ -69,13 +72,14 @@ export class FunctionLinker extends Visitor {
     }
     visitFunctionDeclaration(node, isDefault, ref) {
         super.visitFunctionDeclaration(node, isDefault, ref);
-        if (this.foundException) {
+        const hasException = CallLinker.hasException(node.body);
+        if (this.foundException || hasException) {
             const path = this.path.size
                 ? new Map(this.path.entries())
                 : null;
-            this.sD.fns.push(new FunctionData(node, ref, node.flags & 2 ? true : false, path));
+            this.sD.fns.push(new FunctionData(node, ref, node.flags & 2 ? true : false, hasException, path));
             if (DEBUG)
-                console.log("Added Function: " +
+                console.log("Added Function" + (hasException ? " (unroller): " : ":") +
                     node.name.text +
                     " in " +
                     node.range.source.internalPath);
@@ -86,10 +90,11 @@ export class FunctionLinker extends Visitor {
         this.foundException = false;
         super.visitMethodDeclaration(node, ref);
         if (this.foundException) {
+            const hasException = CallLinker.hasException(node.body);
             const path = this.path.size
                 ? new Map(this.path.entries())
                 : null;
-            this.sD.fns.push(new FunctionData(node, ref, false, path));
+            this.sD.fns.push(new FunctionData(node, ref, false, hasException, path));
         }
     }
     visitCallExpression(node, ref) {

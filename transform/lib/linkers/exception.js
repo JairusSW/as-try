@@ -67,10 +67,6 @@ export class ExceptionLinker extends Visitor {
                         ? path.join(pkgPath, fromPath.slice(5))
                         : fromPath
                     : path.join(baseDir, fromPath);
-                console.log("from: " + fromPath);
-                console.log("to: " + toPath);
-                console.log("base: " + baseDir);
-                console.log("pkg: " + pkgPath);
                 let relPath = removeExtension(path.posix.join(...path.relative(path.dirname(fromPath), toPath).split(path.sep)));
                 if (!relPath.startsWith(".") &&
                     !relPath.startsWith("/") &&
@@ -92,13 +88,17 @@ export class ExceptionLinker extends Visitor {
             const remainingStmts = Array.isArray(ref)
                 ? ref.findIndex((v) => stripExpr(v) == stripExpr(node))
                 : -1;
-            if (remainingStmts != -1 && remainingStmts < ref.length) {
+            if (!this.fn && remainingStmts != -1 && remainingStmts < ref.length) {
                 const errorCheck = Node.createIfStatement(Node.createUnaryPrefixExpression(95, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", node.range), Node.createIdentifierExpression("Failed", node.range), node.range), node.range), Node.createBlockStatement(ref.slice(remainingStmts + 1), node.range), null, node.range);
                 super.visitBlockStatement(errorCheck.ifTrue, errorCheck);
                 replaceAfter(node, [overrideCall, errorCheck], ref);
             }
             else {
-                replaceRef(node, overrideCall, ref);
+                const breaker = this.getBreaker(node, this.fn);
+                const unrollStmt = Node.createIfStatement(Node.createBinaryExpression(76, Node.createPropertyAccessExpression(Node.createIdentifierExpression("__ExceptionState", linkedFn.range), Node.createIdentifierExpression("Failed", linkedFn.range), linkedFn.range), Node.createTrueExpression(linkedFn.range), linkedFn.range), breaker, null, linkedFn.range);
+                replaceRef(node, [overrideCall, unrollStmt], ref);
+                if (DEBUG)
+                    console.log("Unroll Check: " + toString(unrollStmt) + "\nin\n" + toString(ref));
             }
             if (!linked.linked) {
                 const linkedBody = linkedFn.body;

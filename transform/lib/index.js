@@ -11,7 +11,6 @@ export default class Transformer extends Transform {
         let sources = parser.sources;
         const baseDir = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
         const isLib = path.dirname(baseDir).endsWith("node_modules");
-        console.log("isLib: " + isLib);
         if (!isLib &&
             !sources.some((v) => v.normalizedPath.startsWith("assembly/types/exception.ts"))) {
             const p = "./assembly/types/exception.ts";
