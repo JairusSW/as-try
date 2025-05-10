@@ -11,7 +11,7 @@ function abortingFunction(): void {
 
 function callFoo(): void {
   foo();
-  console.log("this should never execute!")
+  console.log("this should never execute!");
 }
 
 try {

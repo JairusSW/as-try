@@ -9,7 +9,7 @@ import {
   ClassDeclaration,
   ImportStatement,
   MethodDeclaration,
-  CommonFlags
+  CommonFlags,
 } from "assemblyscript/dist/assemblyscript.js";
 import { Visitor } from "../lib/visitor.js";
 import { getFnName } from "../utils.js";
@@ -36,7 +36,7 @@ export class FunctionData {
     ref: Node | Node[] | null,
     exported: boolean = false,
     hasBaseException: boolean = false,
-    path: Map<string, NamespaceDeclaration> = null
+    path: Map<string, NamespaceDeclaration> = null,
   ) {
     this.node = node;
     this.ref = ref;
@@ -45,7 +45,13 @@ export class FunctionData {
     this.unroller = hasBaseException;
   }
   clone(): FunctionData {
-    const fn = new FunctionData(this.node, this.ref, this.exported, this.unroller, this.path);
+    const fn = new FunctionData(
+      this.node,
+      this.ref,
+      this.exported,
+      this.unroller,
+      this.path,
+    );
     fn.linked = this.linked;
     fn.imported = this.imported;
     return fn;
@@ -126,8 +132,8 @@ export class FunctionLinker extends Visitor {
     if (this.foundException || hasException) {
       const path = this.path.size
         ? new Map<string, NamespaceDeclaration | ClassDeclaration>(
-          this.path.entries(),
-        )
+            this.path.entries(),
+          )
         : null;
       this.sD.fns.push(
         new FunctionData(
@@ -140,10 +146,11 @@ export class FunctionLinker extends Visitor {
       );
       if (DEBUG)
         console.log(
-          "Added Function" + (hasException ? " (unroller): " : ":") +
-          node.name.text +
-          " in " +
-          node.range.source.internalPath,
+          "Added Function" +
+            (hasException ? " (unroller): " : ":") +
+            node.name.text +
+            " in " +
+            node.range.source.internalPath,
         );
       this.foundException = false;
     }
@@ -160,8 +167,8 @@ export class FunctionLinker extends Visitor {
       const hasException = CallLinker.hasException(node.body);
       const path = this.path.size
         ? new Map<string, NamespaceDeclaration | ClassDeclaration>(
-          this.path.entries(),
-        )
+            this.path.entries(),
+          )
         : null;
       this.sD.fns.push(new FunctionData(node, ref, false, hasException, path)); // I should really check if the class is exported and if the method is public
     }
@@ -301,7 +308,7 @@ export class FunctionLinker extends Visitor {
         return (
           v.exported &&
           name ==
-          getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null)
+            getFnName(v.node.name, v.path ? Array.from(v.path.keys()) : null)
         );
       });
       if (importedFn) {

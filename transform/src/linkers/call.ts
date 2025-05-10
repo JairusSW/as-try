@@ -7,7 +7,7 @@ import {
   NodeKind,
   PropertyAccessExpression,
   BlockStatement,
-  ExpressionStatement
+  ExpressionStatement,
 } from "assemblyscript/dist/assemblyscript.js";
 import { FunctionLinker } from "./function.js";
 import { toString } from "../lib/util.js";
@@ -26,7 +26,10 @@ export class CallLinker extends Visitor {
         ? (node.expression as IdentifierExpression).text
         : (node.expression as PropertyAccessExpression).property.text;
 
-    if (reservedFns.includes(fnName) || toString(node.expression).startsWith("__try_")) {
+    if (
+      reservedFns.includes(fnName) ||
+      toString(node.expression).startsWith("__try_")
+    ) {
       super.visitCallExpression(node, ref);
       return;
     }
@@ -40,7 +43,8 @@ export class CallLinker extends Visitor {
   }
   static hasException(body: Statement | Statement[]): boolean {
     if (!Array.isArray(body)) {
-      if (body.kind == NodeKind.Block) body = (body as BlockStatement).statements;
+      if (body.kind == NodeKind.Block)
+        body = (body as BlockStatement).statements;
       else body = [body];
     }
     CallLinker.SN.visit(body);

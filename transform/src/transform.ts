@@ -253,7 +253,10 @@ export class TryTransform extends Visitor {
       );
 
       source.statements.unshift(importStmt);
-      if (DEBUG) console.log("Import: " + toString(importStmt) + " at " + source.internalPath);
+      if (DEBUG)
+        console.log(
+          "Import: " + toString(importStmt) + " at " + source.internalPath,
+        );
     }
   }
 }

@@ -15,7 +15,7 @@ import {
   PropertyAccessExpression,
   IfStatement,
   ThrowStatement,
-  Program
+  Program,
 } from "assemblyscript/dist/assemblyscript.js";
 import {
   cloneNode,
@@ -85,32 +85,32 @@ export class ExceptionLinker extends Visitor {
       const newException =
         fnName == "abort"
           ? Node.createExpressionStatement(
-            Node.createCallExpression(
-              Node.createPropertyAccessExpression(
-                Node.createIdentifierExpression("__AbortState", node.range),
-                Node.createIdentifierExpression("abort", node.range),
-                node.range,
-              ),
-              null,
-              node.args,
-              node.range,
-            ),
-          )
-          : Node.createExpressionStatement(
-            Node.createCallExpression(
-              Node.createPropertyAccessExpression(
-                Node.createIdentifierExpression(
-                  "__UnreachableState",
+              Node.createCallExpression(
+                Node.createPropertyAccessExpression(
+                  Node.createIdentifierExpression("__AbortState", node.range),
+                  Node.createIdentifierExpression("abort", node.range),
                   node.range,
                 ),
-                Node.createIdentifierExpression("unreachable", node.range),
+                null,
+                node.args,
                 node.range,
               ),
-              null,
-              node.args,
-              node.range,
-            ),
-          );
+            )
+          : Node.createExpressionStatement(
+              Node.createCallExpression(
+                Node.createPropertyAccessExpression(
+                  Node.createIdentifierExpression(
+                    "__UnreachableState",
+                    node.range,
+                  ),
+                  Node.createIdentifierExpression("unreachable", node.range),
+                  node.range,
+                ),
+                null,
+                node.args,
+                node.range,
+              ),
+            );
 
       const breakerStmt = this.getBreaker(node, this.fn);
 
@@ -140,16 +140,16 @@ export class ExceptionLinker extends Visitor {
 
         toPath = toPath.startsWith("~lib/")
           ? existsSync(
-            path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))),
-          )
+              path.join(pkgPath, toPath.slice(5, toPath.indexOf("/", 5))),
+            )
             ? path.join(pkgPath, toPath.slice(5))
             : toPath
           : path.join(baseDir, toPath);
 
         fromPath = fromPath.startsWith("~lib/")
           ? existsSync(
-            path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
-          )
+              path.join(pkgPath, fromPath.slice(5, fromPath.indexOf("/", 5))),
+            )
             ? path.join(pkgPath, fromPath.slice(5))
             : fromPath
           : path.join(baseDir, fromPath);
@@ -194,22 +194,28 @@ export class ExceptionLinker extends Visitor {
           node.range.source.statements.unshift(importStmt);
         this.imports.add("__try_" + linkedFn.name.text);
 
-        if (DEBUG) console.log("Import (call): " + toString(importStmt) + " at " + node.range.source.internalPath);
+        if (DEBUG)
+          console.log(
+            "Import (call): " +
+              toString(importStmt) +
+              " at " +
+              node.range.source.internalPath,
+          );
       }
 
       const overrideCall = Node.createExpressionStatement(
         Node.createCallExpression(
           linked.path
             ? SimpleParser.parseExpression(
-              getFnName(
-                "__try_" + linkedFn.name.text,
-                linked.path ? Array.from(linked.path.keys()) : null,
-              ),
-            )
+                getFnName(
+                  "__try_" + linkedFn.name.text,
+                  linked.path ? Array.from(linked.path.keys()) : null,
+                ),
+              )
             : Node.createIdentifierExpression(
-              getFnName("__try_" + linkedFn.name.text),
-              node.expression.range,
-            ),
+                getFnName("__try_" + linkedFn.name.text),
+                node.expression.range,
+              ),
           node.typeArguments,
           node.args,
           node.range,
@@ -246,26 +252,31 @@ export class ExceptionLinker extends Visitor {
         );
         replaceAfter(node, [overrideCall, errorCheck], ref);
       } else {
-        
         const breaker = this.getBreaker(node, this.fn);
         const unrollStmt = Node.createIfStatement(
           Node.createBinaryExpression(
             Token.Equals_Equals,
             Node.createPropertyAccessExpression(
-              Node.createIdentifierExpression("__ExceptionState", linkedFn.range),
+              Node.createIdentifierExpression(
+                "__ExceptionState",
+                linkedFn.range,
+              ),
               Node.createIdentifierExpression("Failed", linkedFn.range),
               linkedFn.range,
             ),
             Node.createTrueExpression(linkedFn.range),
-            linkedFn.range
+            linkedFn.range,
           ),
           breaker,
           null,
-          linkedFn.range
+          linkedFn.range,
         );
 
         replaceRef(node, [overrideCall, unrollStmt], ref);
-        if (DEBUG) console.log("Unroll Check: " + toString(unrollStmt) + "\nin\n" + toString(ref));
+        if (DEBUG)
+          console.log(
+            "Unroll Check: " + toString(unrollStmt) + "\nin\n" + toString(ref),
+          );
       }
 
       if (!linked.linked) {

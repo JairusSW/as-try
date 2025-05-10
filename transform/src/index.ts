@@ -130,7 +130,7 @@ export default class Transformer extends Transform {
           return 0;
         }
       });
-    
+
     ExceptionLinker.SN.program = this.program;
     ExceptionLinker.SN.baseDir = this.baseDir;
 
